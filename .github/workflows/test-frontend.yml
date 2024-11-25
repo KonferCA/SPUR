@@ -1,4 +1,3 @@
-name: Test Frontend
 on:
   push:
     branches: ['main', 'staging', 'prod']
@@ -10,13 +9,13 @@ on:
       - 'frontend/**'
 jobs:
   test-frontend:
+    name: Test Frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Check ls
+        run: ls
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -26,7 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Run tests
@@ -36,6 +34,5 @@ jobs:
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-report-frontend
           path: coverage/
-          retention-days: 7
