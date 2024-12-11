@@ -86,3 +86,23 @@ export async function signout(): Promise<void> {
     const url = getApiUrl('/auth/signout');
     await fetch(url, { method: 'POST' });
 }
+
+/**
+ * Verifies if auth cookie is valid or not
+ */
+export async function verifyAuthCookie(): Promise<AuthResponse> {
+    const url = getApiUrl('/auth/verify');
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            credentials: 'include',
+        },
+    });
+    const json = await res.json();
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new Error('Failed to verify auth cookie');
+    }
+
+    return json as AuthResponse;
+}

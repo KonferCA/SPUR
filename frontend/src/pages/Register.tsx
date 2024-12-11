@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getApiUrl } from '@/utils';
 import { getCompany } from '@/services/company';
+import { verifyAuthCookie } from '@/services/auth';
 
 type RegistrationStep =
     | 'login-register'
@@ -568,6 +569,18 @@ const Register = () => {
             }
         }
     }, [user, currentStep, navigate]);
+
+    useEffect(() => {
+        const verify = async () => {
+            try {
+                const res = await verifyAuthCookie();
+                setAuth(res.user, res.access_token, companyId);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        verify();
+    }, [companyId]);
 
     return (
         <div className="min-h-screen bg-gray-50">
