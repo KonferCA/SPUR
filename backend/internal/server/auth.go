@@ -41,7 +41,7 @@ func (s *Server) setupAuthRoutes() {
 	auth.POST("/resend-verification", s.handleResendVerificationEmail, mw.ValidateRequestBody(reflect.TypeOf(ResendVerificationEmailRequest{})))
 	auth.POST("/refresh", s.handleRefreshToken)
 	auth.POST("/signout", s.handleSignout)
-	auth.POST("/verify", s.handleVerifyCookie)
+	auth.GET("/verify", s.handleVerifyCookie)
 }
 
 func (s *Server) handleSignup(c echo.Context) error {
