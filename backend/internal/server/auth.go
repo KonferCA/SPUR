@@ -27,6 +27,10 @@ type SigninResponse struct {
 	User        User   `json:"user"`
 }
 
+const (
+	COOKIE_TOKEN = "token"
+)
+
 func (s *Server) setupAuthRoutes() {
 	auth := s.apiV1.Group("/auth")
 	auth.Use(s.authLimiter.RateLimit()) // special rate limit for auth routes
@@ -37,6 +41,7 @@ func (s *Server) setupAuthRoutes() {
 	auth.POST("/resend-verification", s.handleResendVerificationEmail, mw.ValidateRequestBody(reflect.TypeOf(ResendVerificationEmailRequest{})))
 	auth.POST("/refresh", s.handleRefreshToken)
 	auth.POST("/signout", s.handleSignout)
+	auth.POST("/verify", s.handleVerifyCookie)
 }
 
 func (s *Server) handleSignup(c echo.Context) error {
@@ -397,10 +402,63 @@ func (s *Server) handleSignout(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+func (s *Server) handleVerifyCookie(c echo.Context) error {
+	cookie, err := c.Cookie(COOKIE_TOKEN)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get token cookie")
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing token cookie")
+	}
+
+	tokenString := cookie.Value
+	unverifiedClaims, err := jwt.ParseUnverifiedClaims(tokenString)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to parse token claims")
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
+	}
+
+	// get salt
+	salt, err := s.queries.GetUserTokenSalt(c.Request().Context(), unverifiedClaims.UserID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user token salt")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to verify token")
+	}
+
+	claims, err := jwt.VerifyTokenWithSalt(tokenString, salt)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to verify token")
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid or expired token")
+	}
+
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(claims.UserID, claims.Role, salt)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to generate access and refresh tokens")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to verify token")
+	}
+
+	newCookie := getAuthCookie(refreshToken)
+	c.SetCookie(newCookie)
+
+	return c.JSON(http.StatusOK, map[string]string{"access_token": accessToken})
+}
+
 // helper function to convert pgtype.Text to *string
 func getStringPtr(t pgtype.Text) *string {
 	if !t.Valid {
 		return nil
 	}
 	return &t.String
+}
+
+func getAuthCookie(refreshToken string) *http.Cookie {
+	// Set new refresh token cookie
+	refreshCookie := new(http.Cookie)
+	refreshCookie.Name = "refresh_token"
+	refreshCookie.Value = refreshToken
+	refreshCookie.HttpOnly = true
+	refreshCookie.Secure = true
+	refreshCookie.SameSite = http.SameSiteStrictMode
+	refreshCookie.Path = "/api/v1/auth"
+	refreshCookie.MaxAge = 604800 // 7 days in seconds
+
+	return refreshCookie
 }

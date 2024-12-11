@@ -22,10 +22,11 @@ type Server struct {
 	DBPool       *pgxpool.Pool
 	queries      *db.Queries
 	echoInstance *echo.Echo
-	apiV1        *echo.Group
-	authLimiter  *middleware.RateLimiter
-	apiLimiter   *middleware.RateLimiter
-	Storage      *storage.Storage
+	// prefix /api/v1
+	apiV1       *echo.Group
+	authLimiter *middleware.RateLimiter
+	apiLimiter  *middleware.RateLimiter
+	Storage     *storage.Storage
 }
 
 // Create a new Server instance and registers all routes and middlewares.
