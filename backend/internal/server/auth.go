@@ -417,19 +417,19 @@ func (s *Server) handleVerifyCookie(c echo.Context) error {
 	}
 
 	// get salt
-	salt, err := s.queries.GetUserTokenSalt(c.Request().Context(), unverifiedClaims.UserID)
+	user, err := s.queries.GetUserByID(c.Request().Context(), unverifiedClaims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get user token salt")
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to verify token")
 	}
 
-	claims, err := jwt.VerifyTokenWithSalt(tokenString, salt)
+	claims, err := jwt.VerifyTokenWithSalt(tokenString, user.TokenSalt)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to verify token")
 		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid or expired token")
 	}
 
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(claims.UserID, claims.Role, salt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(claims.UserID, claims.Role, user.TokenSalt)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate access and refresh tokens")
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to verify token")
@@ -438,7 +438,18 @@ func (s *Server) handleVerifyCookie(c echo.Context) error {
 	newCookie := getAuthCookie(refreshToken)
 	c.SetCookie(newCookie)
 
-	return c.JSON(http.StatusOK, map[string]string{"access_token": accessToken})
+	return c.JSON(http.StatusOK, SigninResponse{
+		AccessToken: accessToken,
+		User: User{
+			ID:            user.ID,
+			Email:         user.Email,
+			FirstName:     user.FirstName,
+			LastName:      user.LastName,
+			Role:          user.Role,
+			WalletAddress: user.WalletAddress,
+			EmailVerified: user.EmailVerified,
+		},
+	})
 }
 
 // helper function to convert pgtype.Text to *string
