@@ -151,7 +151,7 @@ func New(testing bool) (*Server, error) {
 	} else {
 		// development environment
 		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-			AllowOrigins: []string{"http://localhost:5173"},
+			AllowOrigins: []string{"http://localhost:5173", "http://localhost:8080"},
 			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 			AllowHeaders: []string{
 				echo.HeaderOrigin,

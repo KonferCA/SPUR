@@ -93,10 +93,7 @@ export async function signout(): Promise<void> {
 export async function verifyAuthCookie(): Promise<AuthResponse> {
     const url = getApiUrl('/auth/verify');
     const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-            credentials: 'include',
-        },
+        credentials: 'include',
     });
     const json = await res.json();
 

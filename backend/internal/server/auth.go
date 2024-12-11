@@ -3,9 +3,11 @@ package server
 import (
 	"context"
 	"net/http"
+	"os"
 	"reflect"
 	"time"
 
+	"KonferCA/SPUR/common"
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
 	mw "KonferCA/SPUR/internal/middleware"
@@ -28,7 +30,7 @@ type SigninResponse struct {
 }
 
 const (
-	COOKIE_TOKEN = "token"
+	COOKIE_TOKEN = "refresh_token"
 )
 
 func (s *Server) setupAuthRoutes() {
@@ -77,15 +79,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 	}
 
 	// Set refresh token as HTTP-only cookie
-	cookie := new(http.Cookie)
-	cookie.Name = "refresh_token"
-	cookie.Value = refreshToken
-	cookie.HttpOnly = true
-	cookie.Secure = true // only send over HTTPS
-	cookie.SameSite = http.SameSiteStrictMode
-	cookie.Path = "/api/v1/auth"     // only accessible by auth endpoints
-	cookie.MaxAge = 7 * 24 * 60 * 60 // 7 days in seconds
-
+	cookie := getAuthCookie(refreshToken)
 	c.SetCookie(cookie)
 
 	// Send verification email asynchronously
@@ -156,15 +150,7 @@ func (s *Server) handleSignin(c echo.Context) error {
 	}
 
 	// Set refresh token as HTTP-only cookie
-	cookie := new(http.Cookie)
-	cookie.Name = "refresh_token"
-	cookie.Value = refreshToken
-	cookie.HttpOnly = true
-	cookie.Secure = true // only send over HTTPS
-	cookie.SameSite = http.SameSiteStrictMode
-	cookie.Path = "/api/v1/auth"     // only accessible by auth endpoints
-	cookie.MaxAge = 7 * 24 * 60 * 60 // 7 days in seconds
-
+	cookie := getAuthCookie(refreshToken)
 	c.SetCookie(cookie)
 
 	return c.JSON(http.StatusOK, SigninResponse{
@@ -390,11 +376,15 @@ func (s *Server) handleRefreshToken(c echo.Context) error {
 func (s *Server) handleSignout(c echo.Context) error {
 	// Create an expired cookie to clear the refresh token
 	cookie := new(http.Cookie)
-	cookie.Name = "refresh_token"
+	cookie.Name = COOKIE_TOKEN
 	cookie.Value = ""
 	cookie.HttpOnly = true
 	cookie.Secure = true
-	cookie.SameSite = http.SameSiteStrictMode
+	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
+		cookie.SameSite = http.SameSiteNoneMode
+	} else {
+		cookie.SameSite = http.SameSiteStrictMode
+	}
 	cookie.Path = "/api/v1/auth"
 	cookie.MaxAge = -1 // immediately expires the cookie
 
@@ -463,11 +453,15 @@ func getStringPtr(t pgtype.Text) *string {
 func getAuthCookie(refreshToken string) *http.Cookie {
 	// Set new refresh token cookie
 	refreshCookie := new(http.Cookie)
-	refreshCookie.Name = "refresh_token"
+	refreshCookie.Name = COOKIE_TOKEN
 	refreshCookie.Value = refreshToken
 	refreshCookie.HttpOnly = true
 	refreshCookie.Secure = true
-	refreshCookie.SameSite = http.SameSiteStrictMode
+	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
+		refreshCookie.SameSite = http.SameSiteNoneMode
+	} else {
+		refreshCookie.SameSite = http.SameSiteStrictMode
+	}
 	refreshCookie.Path = "/api/v1/auth"
 	refreshCookie.MaxAge = 604800 // 7 days in seconds
 
