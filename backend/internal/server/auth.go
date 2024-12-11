@@ -455,12 +455,12 @@ func getAuthCookie(refreshToken string) *http.Cookie {
 	refreshCookie := new(http.Cookie)
 	refreshCookie.Name = COOKIE_TOKEN
 	refreshCookie.Value = refreshToken
-	refreshCookie.HttpOnly = true
 	refreshCookie.Secure = true
+	refreshCookie.HttpOnly = true
+	refreshCookie.SameSite = http.SameSiteStrictMode
 	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
 		refreshCookie.SameSite = http.SameSiteNoneMode
-	} else {
-		refreshCookie.SameSite = http.SameSiteStrictMode
+		refreshCookie.Secure = false
 	}
 	refreshCookie.Path = "/api/v1/auth"
 	refreshCookie.MaxAge = 604800 // 7 days in seconds
