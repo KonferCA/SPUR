@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Button, TextInput, TextArea } from '@components';
-import { register, signin, RegisterError, ApiError } from '@services';
+import { register, login, RegisterError, ApiError } from '@services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getApiUrl } from '@/utils';
@@ -432,7 +432,7 @@ const Register = () => {
     const handleLogin = async () => {
         setIsLoading(true);
         try {
-            const signinResp = await signin(formData.email, formData.password);
+            const signinResp = await login(formData.email, formData.password);
             const company = await getCompany(signinResp.access_token);
             setAuth(
                 signinResp.user,

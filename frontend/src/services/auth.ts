@@ -25,7 +25,7 @@ export async function register(
     password: string,
     role: UserRole = 'startup_owner'
 ): Promise<RegisterReponse> {
-    const url = getApiUrl('/auth/signup');
+    const url = getApiUrl('/auth/register');
     const body = {
         email,
         password,
@@ -52,11 +52,11 @@ export async function register(
 /**
  * Signs in a user with email and password
  */
-export async function signin(
+export async function login(
     email: string,
     password: string
 ): Promise<SigninResponse> {
-    const url = getApiUrl('/auth/signin');
+    const url = getApiUrl('/auth/login');
     const body = {
         email,
         password,
