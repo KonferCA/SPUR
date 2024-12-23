@@ -21,4 +21,5 @@ func SetupAuthRoutes(e *echo.Group, s interfaces.CoreServer) {
 		middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleAdmin),
 	)
 	e.GET("/auth/verify-email", h.handleVerifyEmail)
+	e.POST("/auth/register", h.handleRegister)
 }
