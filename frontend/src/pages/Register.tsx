@@ -121,21 +121,29 @@ const LoginRegister = ({
 
 const VerifyEmail = ({
     email,
+    accessToken,
     onVerified,
 }: {
     email: string;
+    accessToken: string | null;
     onVerified: () => void;
 }) => {
     useEffect(() => {
         let isMounted = true;
 
         const checkVerification = async () => {
+            if (!accessToken || !email) return;
             try {
                 const response = await fetch(
                     getApiUrl(
                         `/auth/ami-verified?email=${encodeURIComponent(email)}`
                     ),
-                    { method: 'GET' }
+                    {
+                        method: 'GET',
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    }
                 );
 
                 const data = await response.json();
@@ -509,6 +517,7 @@ const Register = () => {
                 return (
                     <VerifyEmail
                         email={formData.email}
+                        accessToken={accessToken}
                         onVerified={() => {
                             if (user) user.email_verified = true;
                             setAuth(user, accessToken, companyId);
