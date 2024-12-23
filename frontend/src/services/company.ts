@@ -29,7 +29,7 @@ export async function createCompany(
         headers: {
             'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
     });
 
     const json = await res.json();
@@ -51,7 +51,7 @@ export async function getCompany(
         headers: {
             Authorization: `Bearer ${accessToken}`,
         },
-        credentials: 'include'
+        credentials: 'include',
     });
 
     const json = await res.json();

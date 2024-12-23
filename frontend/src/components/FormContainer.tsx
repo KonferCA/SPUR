@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ComponentProps } from "@/types/common";
+import type { ComponentProps } from '@/types/common';
 
 interface FormContainerProps extends ComponentProps {
     title: string;
@@ -8,11 +8,9 @@ interface FormContainerProps extends ComponentProps {
 const FormContainer: React.FC<FormContainerProps> = ({ children }) => {
     return (
         <div className="min-h-screen flex flex-col items-center px-4">
-            <div className="w-full max-w-xl p-8">
-                {children}
-            </div>
+            <div className="w-full max-w-xl p-8">{children}</div>
         </div>
     );
-}
+};
 
 export { FormContainer };

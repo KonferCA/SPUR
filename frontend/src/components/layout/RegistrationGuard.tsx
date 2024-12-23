@@ -25,4 +25,3 @@ const RegistrationGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 export { RegistrationGuard };
-

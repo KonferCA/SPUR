@@ -7,7 +7,10 @@ interface WalletConnectButtonProps {
     className?: string;
 }
 
-export const WalletConnectButton = ({ onWalletConnected, className }: WalletConnectButtonProps) => {
+export const WalletConnectButton = ({
+    onWalletConnected,
+    className,
+}: WalletConnectButtonProps) => {
     const { connected, select, address, connecting } = useWallet();
     const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +21,10 @@ export const WalletConnectButton = ({ onWalletConnected, className }: WalletConn
         } catch (e) {
             console.error('Failed to connect wallet:', e);
             setError('Please make sure Suiet wallet is installed and unlocked');
-            window.open('https://chrome.google.com/webstore/detail/suiet-wallet/khpkpbbcccdmmclmpigdgddabeilkdpd', '_blank');
+            window.open(
+                'https://chrome.google.com/webstore/detail/suiet-wallet/khpkpbbcccdmmclmpigdgddabeilkdpd',
+                '_blank'
+            );
         }
     };
 
@@ -49,4 +55,4 @@ export const WalletConnectButton = ({ onWalletConnected, className }: WalletConn
             )}
         </div>
     );
-}; 
+};

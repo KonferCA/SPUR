@@ -11,13 +11,13 @@ export { TextArea } from './TextArea';
 export { TeamMembers } from './TeamMembers';
 export { SocialLinks } from './SocialLinks';
 export { DateInput } from './DateInput';
-export { 
-  PageLayout, 
-  Section, 
-  Grid, 
-  Footer, 
-  Header, 
-  DashboardTemplate,
-  AdminDashboard,
-  UserDashboard
+export {
+    PageLayout,
+    Section,
+    Grid,
+    Footer,
+    Header,
+    DashboardTemplate,
+    AdminDashboard,
+    UserDashboard,
 } from './layout';
