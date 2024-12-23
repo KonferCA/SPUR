@@ -16,7 +16,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     // if not logged in, redirect to landing page
     if (!user) {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/register" replace />;
     }
 
     // check if user's role is allowed
