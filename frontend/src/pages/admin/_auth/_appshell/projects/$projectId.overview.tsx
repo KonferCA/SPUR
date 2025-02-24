@@ -443,9 +443,9 @@ function RouteComponent() {
                       <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3">
                         <p className="font-medium">{member.firstName} {member.lastName}</p>
                         <p className="text-gray-300 text-xs mt-1">{member.title}</p>
-                        {member.linkedin && (
+                        {member.linkedinUrl && (
                           <a 
-                            href={member.linkedin}
+                            href={member.linkedinUrl}
                             target="_blank"
                             rel="noopener noreferrer" 
                             className="text-blue-400 hover:text-blue-300 mt-1 block"

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiPlus, FiEdit } from 'react-icons/fi';
+import { FiPlus, FiEdit } from 'react-icons/fi';
 import {
-    Button,
-    FileUpload,
     TextArea,
     TextInput,
     UploadableFile,

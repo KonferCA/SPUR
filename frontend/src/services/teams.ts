@@ -40,32 +40,6 @@ interface TeamMemberResponse {
     updated_at: string;
 }
 
-// extract handle from url
-const extractHandle = (url: string, platform: 'twitter' | 'discord' | 'bluesky' | 'facebook' | 'instagram' | 'linkedin') => {
-    if (!url) return '';
-    try {
-        const urlObj = new URL(url);
-        switch (platform) {
-            case 'twitter':
-                return urlObj.pathname.split('/').pop() || '';
-            case 'discord':
-                return urlObj.pathname.split('/').pop() || '';
-            case 'bluesky':
-                return urlObj.pathname.split('/').pop() || '';
-            case 'facebook':
-                return urlObj.pathname.split('/').pop() || '';
-            case 'instagram':
-                return urlObj.pathname.split('/').pop() || '';
-            case 'linkedin':
-                return urlObj.pathname.split('/').slice(-1)[0] || '';
-            default:
-                return '';
-        }
-    } catch {
-        return url; // if not a valid URL, return as is
-    }
-};
-
 export async function addTeamMember(accessToken: string, data: TeamMemberData) {
     const url = getApiUrl(`/companies/${data.companyId}/team`);
 
