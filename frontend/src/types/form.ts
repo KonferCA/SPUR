@@ -50,10 +50,15 @@ export interface TeamMember {
     lastName: string;
     title: string;
     detailedBiography: string;
-    linkedin: string;
+    linkedinUrl: string;
+    facebookUrl: string;
+    instagramUrl: string;
+    xUrl: string;
+    blueskyUrl: string;
+    discordUrl: string;
+    personalWebsite: string;
     resumeExternalUrl: string;
     resumeInternalUrl: string;
-    personalWebsite: string;
     commitmentType: string;
     introduction: string;
     industryExperience: string;
