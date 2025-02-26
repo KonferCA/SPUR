@@ -38,7 +38,7 @@ describe('SocialCard', () => {
         render(<SocialCard data={data} />);
 
         expect(screen.getByAltText('Bluesky')).toBeInTheDocument();
-        expect(screen.getByText('handle')).toBeInTheDocument();
+        expect(screen.getByText('handle.bsky.social')).toBeInTheDocument();
     });
 
     it('renders Facebook social card with correct handle format', () => {
@@ -49,7 +49,7 @@ describe('SocialCard', () => {
         render(<SocialCard data={data} />);
 
         expect(screen.getByAltText('Facebook')).toBeInTheDocument();
-        expect(screen.getByText('username')).toBeInTheDocument();
+        expect(screen.getByText('@username')).toBeInTheDocument();
     });
 
     it('renders LinkedIn social card with correct handle format', () => {

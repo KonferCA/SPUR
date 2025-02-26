@@ -42,6 +42,12 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
+	// Process social links from the socialLinks array
+	socialLinksJSON, err := v1_common.ProcessSocialLinksRequest(req.SocialLinks)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid social links format", err)
+	}
+
 	// Create team member in database
 	queries := db.New(h.server.GetDB())
 	member, err := queries.CreateTeamMember(c.Request().Context(), db.CreateTeamMemberParams{
@@ -50,6 +56,7 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		LastName:                     req.LastName,
 		Title:                        req.Title,
 		LinkedinUrl:                  req.LinkedinUrl,
+		SocialLinks:                  socialLinksJSON,
 		IsAccountOwner:               false,
 		PersonalWebsite:              req.PersonalWebsite,
 		CommitmentType:               req.CommitmentType,
@@ -66,8 +73,51 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create team member", err)
 	}
 
+	// Process social links
+	socialLinks := v1_common.ProcessSocialLinks(member)
+
+	previousWorkStr := ""
+	if member.PreviousWork != nil {
+		previousWorkStr = *member.PreviousWork
+	}
+	resumeExternalUrlStr := ""
+	if member.ResumeExternalUrl != nil {
+		resumeExternalUrlStr = *member.ResumeExternalUrl
+	}
+	resumeInternalUrlStr := ""
+	if member.ResumeInternalUrl != nil {
+		resumeInternalUrlStr = *member.ResumeInternalUrl
+	}
+	foundersAgreementExternalUrlStr := ""
+	if member.FoundersAgreementExternalUrl != nil {
+		foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
+	}
+	foundersAgreementInternalUrlStr := ""
+	if member.FoundersAgreementInternalUrl != nil {
+		foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
+	}
+
 	// Return success response with member data
-	return c.JSON(http.StatusCreated, member)
+	return c.JSON(http.StatusCreated, TeamMemberResponse{
+		ID:                           member.ID,
+		CompanyID:                    member.CompanyID,
+		FirstName:                    member.FirstName,
+		LastName:                     member.LastName,
+		Title:                        member.Title,
+		SocialLinks:                  socialLinks,
+		IsAccountOwner:               member.IsAccountOwner,
+		CommitmentType:               member.CommitmentType,
+		Introduction:                 member.Introduction,
+		IndustryExperience:           member.IndustryExperience,
+		DetailedBiography:            member.DetailedBiography,
+		PreviousWork:                 previousWorkStr,
+		ResumeExternalUrl:            resumeExternalUrlStr,
+		ResumeInternalUrl:            resumeInternalUrlStr,
+		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
+		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
+		CreatedAt:                    formatTime(member.CreatedAt),
+		UpdatedAt:                    formatTime(member.UpdatedAt),
+	})
 }
 
 /*
@@ -97,15 +147,49 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 	// Convert to response type
 	var teamMembers []TeamMemberResponse
 	for _, member := range members {
+		// Process social links
+		socialLinks := v1_common.ProcessSocialLinks(member)
+
+		previousWorkStr := ""
+		if member.PreviousWork != nil {
+			previousWorkStr = *member.PreviousWork
+		}
+		resumeExternalUrlStr := ""
+		if member.ResumeExternalUrl != nil {
+			resumeExternalUrlStr = *member.ResumeExternalUrl
+		}
+		resumeInternalUrlStr := ""
+		if member.ResumeInternalUrl != nil {
+			resumeInternalUrlStr = *member.ResumeInternalUrl
+		}
+		foundersAgreementExternalUrlStr := ""
+		if member.FoundersAgreementExternalUrl != nil {
+			foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
+		}
+		foundersAgreementInternalUrlStr := ""
+		if member.FoundersAgreementInternalUrl != nil {
+			foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
+		}
+
 		teamMembers = append(teamMembers, TeamMemberResponse{
-			ID:             member.ID,
-			FirstName:      member.FirstName,
-			LastName:       member.LastName,
-			Title:          member.Title,
-			Bio:            member.DetailedBiography,
-			LinkedinUrl:    member.LinkedinUrl,
-			IsAccountOwner: member.IsAccountOwner,
-			CreatedAt:      formatTime(member.CreatedAt),
+			ID:                           member.ID,
+			CompanyID:                    member.CompanyID,
+			FirstName:                    member.FirstName,
+			LastName:                     member.LastName,
+			Title:                        member.Title,
+			SocialLinks:                  socialLinks,
+			IsAccountOwner:               member.IsAccountOwner,
+			CommitmentType:               member.CommitmentType,
+			Introduction:                 member.Introduction,
+			IndustryExperience:           member.IndustryExperience,
+			DetailedBiography:            member.DetailedBiography,
+			PreviousWork:                 previousWorkStr,
+			ResumeExternalUrl:            resumeExternalUrlStr,
+			ResumeInternalUrl:            resumeInternalUrlStr,
+			FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
+			FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
+			CreatedAt:                    formatTime(member.CreatedAt),
+			UpdatedAt:                    formatTime(member.UpdatedAt),
 		})
 	}
 
@@ -147,16 +231,49 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to retrieve team member", err)
 	}
 
+	// Process social links
+	socialLinks := v1_common.ProcessSocialLinks(member)
+
+	previousWorkStr := ""
+	if member.PreviousWork != nil {
+		previousWorkStr = *member.PreviousWork
+	}
+	resumeExternalUrlStr := ""
+	if member.ResumeExternalUrl != nil {
+		resumeExternalUrlStr = *member.ResumeExternalUrl
+	}
+	resumeInternalUrlStr := ""
+	if member.ResumeInternalUrl != nil {
+		resumeInternalUrlStr = *member.ResumeInternalUrl
+	}
+	foundersAgreementExternalUrlStr := ""
+	if member.FoundersAgreementExternalUrl != nil {
+		foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
+	}
+	foundersAgreementInternalUrlStr := ""
+	if member.FoundersAgreementInternalUrl != nil {
+		foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
+	}
+
 	response := TeamMemberResponse{
-		ID:             member.ID,
-		FirstName:      member.FirstName,
-		LastName:       member.LastName,
-		Title:          member.Title,
-		Bio:            member.DetailedBiography,
-		LinkedinUrl:    member.LinkedinUrl,
-		IsAccountOwner: member.IsAccountOwner,
-		CreatedAt:      formatTime(member.CreatedAt),
-		UpdatedAt:      formatTime(member.UpdatedAt),
+		ID:                           member.ID,
+		CompanyID:                    member.CompanyID,
+		FirstName:                    member.FirstName,
+		LastName:                     member.LastName,
+		Title:                        member.Title,
+		SocialLinks:                  socialLinks,
+		IsAccountOwner:               member.IsAccountOwner,
+		CommitmentType:               member.CommitmentType,
+		Introduction:                 member.Introduction,
+		IndustryExperience:           member.IndustryExperience,
+		DetailedBiography:            member.DetailedBiography,
+		PreviousWork:                 previousWorkStr,
+		ResumeExternalUrl:            resumeExternalUrlStr,
+		ResumeInternalUrl:            resumeInternalUrlStr,
+		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
+		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
+		CreatedAt:                    formatTime(member.CreatedAt),
+		UpdatedAt:                    formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -190,16 +307,64 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
+	// Process social links from the socialLinks array
+	socialLinksJSON, err := v1_common.ProcessSocialLinksRequest(req.SocialLinks)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid social links format", err)
+	}
+
 	// Update team member in database
 	queries := db.New(h.server.GetDB())
+	
+	// Convert pointer strings to regular strings for the update params
+	personalWebsiteStr := ""
+	if req.PersonalWebsite != nil {
+		personalWebsiteStr = *req.PersonalWebsite
+	}
+	
+	previousWorkStr := ""
+	if req.PreviousWork != nil {
+		previousWorkStr = *req.PreviousWork
+	}
+	
+	resumeExternalUrlStr := ""
+	if req.ResumeExternalUrl != nil {
+		resumeExternalUrlStr = *req.ResumeExternalUrl
+	}
+	
+	resumeInternalUrlStr := ""
+	if req.ResumeInternalUrl != nil {
+		resumeInternalUrlStr = *req.ResumeInternalUrl
+	}
+	
+	foundersAgreementExternalUrlStr := ""
+	if req.FoundersAgreementExternalUrl != nil {
+		foundersAgreementExternalUrlStr = *req.FoundersAgreementExternalUrl
+	}
+	
+	foundersAgreementInternalUrlStr := ""
+	if req.FoundersAgreementInternalUrl != nil {
+		foundersAgreementInternalUrlStr = *req.FoundersAgreementInternalUrl
+	}
+	
 	member, err := queries.UpdateTeamMember(c.Request().Context(), db.UpdateTeamMemberParams{
 		ID:          memberID,
 		CompanyID:   companyID,
 		FirstName:   req.FirstName,
 		LastName:    req.LastName,
 		Title:       req.Title,
-		Bio:         req.Bio,
+		DetailedBiography: req.DetailedBiography,
 		LinkedinUrl: req.LinkedinUrl,
+		SocialLinks: socialLinksJSON,
+		PersonalWebsite: personalWebsiteStr,
+		CommitmentType: req.CommitmentType,
+		Introduction: req.Introduction,
+		IndustryExperience: req.IndustryExperience,
+		PreviousWork: previousWorkStr,
+		ResumeExternalUrl: resumeExternalUrlStr,
+		ResumeInternalUrl: resumeInternalUrlStr,
+		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
+		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
@@ -208,16 +373,49 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update team member", err)
 	}
 
+	// Process social links
+	socialLinks := v1_common.ProcessSocialLinks(member)
+
+	previousWorkStr = ""
+	if member.PreviousWork != nil {
+		previousWorkStr = *member.PreviousWork
+	}
+	resumeExternalUrlStr = ""
+	if member.ResumeExternalUrl != nil {
+		resumeExternalUrlStr = *member.ResumeExternalUrl
+	}
+	resumeInternalUrlStr = ""
+	if member.ResumeInternalUrl != nil {
+		resumeInternalUrlStr = *member.ResumeInternalUrl
+	}
+	foundersAgreementExternalUrlStr = ""
+	if member.FoundersAgreementExternalUrl != nil {
+		foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
+	}
+	foundersAgreementInternalUrlStr = ""
+	if member.FoundersAgreementInternalUrl != nil {
+		foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
+	}
+
 	response := TeamMemberResponse{
-		ID:             member.ID,
-		FirstName:      member.FirstName,
-		LastName:       member.LastName,
-		Title:          member.Title,
-		Bio:            member.DetailedBiography,
-		LinkedinUrl:    member.LinkedinUrl,
-		IsAccountOwner: member.IsAccountOwner,
-		CreatedAt:      formatTime(member.CreatedAt),
-		UpdatedAt:      formatTime(member.UpdatedAt),
+		ID:                           member.ID,
+		CompanyID:                    member.CompanyID,
+		FirstName:                    member.FirstName,
+		LastName:                     member.LastName,
+		Title:                        member.Title,
+		SocialLinks:                  socialLinks,
+		IsAccountOwner:               member.IsAccountOwner,
+		CommitmentType:               member.CommitmentType,
+		Introduction:                 member.Introduction,
+		IndustryExperience:           member.IndustryExperience,
+		DetailedBiography:            member.DetailedBiography,
+		PreviousWork:                 previousWorkStr,
+		ResumeExternalUrl:            resumeExternalUrlStr,
+		ResumeInternalUrl:            resumeInternalUrlStr,
+		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
+		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
+		CreatedAt:                    formatTime(member.CreatedAt),
+		UpdatedAt:                    formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }

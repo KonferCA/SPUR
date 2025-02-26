@@ -41,28 +41,60 @@ export const SocialCard: FC<SocialCardProps> = ({
     }, [platform]);
 
     const displayText = useMemo(() => {
-        let idx = -1;
-        switch (platform) {
-            case SocialPlatform.BlueSky:
-                idx = urlOrHandle.indexOf('.');
-                return urlOrHandle.substring(0, idx);
-            case SocialPlatform.Facebook:
-            case SocialPlatform.LinkedIn:
-                idx = urlOrHandle.lastIndexOf('/');
-                return urlOrHandle.substring(idx + 1);
-            case SocialPlatform.CustomUrl:
-                let domain = urlOrHandle
-                    .replace(/^https?:\/\//, '')
-                    .replace(/^www\./, '');
-                idx = domain.indexOf('/');
-                if (idx !== -1) {
-                    domain = domain.substring(0, idx);
-                }
-                return domain;
-            default:
-                return urlOrHandle;
+        let handle = '';
+        
+        // If it's already a handle (no URL), just show it as is
+        if (!urlOrHandle.startsWith('http')) {
+            return urlOrHandle;
         }
-    }, [urlOrHandle]);
+        
+        try {
+            const url = new URL(urlOrHandle);
+            
+            switch (platform) {
+                case SocialPlatform.X:
+                    // Extract username from Twitter URL
+                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
+                    return '@' + handle;
+                    
+                case SocialPlatform.BlueSky:
+                    // Extract username from BlueSky URL
+                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
+                    return '@' + handle;
+                    
+                case SocialPlatform.Facebook:
+                    // Extract username from Facebook URL
+                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
+                    return '@' + handle;
+                    
+                case SocialPlatform.Instagram:
+                    // Extract username from Instagram URL
+                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
+                    return '@' + handle;
+                    
+                case SocialPlatform.LinkedIn:
+                    // Extract username from LinkedIn URL
+                    handle = url.pathname.split('/').pop() || '';
+                    return handle;
+                    
+                case SocialPlatform.Discord:
+                    // Extract username from Discord URL
+                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
+                    return '@' + handle;
+                    
+                case SocialPlatform.CustomUrl:
+                    // Just show the domain for websites
+                    let domain = url.hostname.replace(/^www\./, '');
+                    return domain;
+                    
+                default:
+                    return urlOrHandle;
+            }
+        } catch (e) {
+            // If parsing fails, just return the original
+            return urlOrHandle;
+        }
+    }, [urlOrHandle, platform]);
 
     const Icon =
         platform !== SocialPlatform.CustomUrl ? (
