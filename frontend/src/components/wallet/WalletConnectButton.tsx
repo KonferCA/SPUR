@@ -7,16 +7,20 @@ interface WalletConnectButtonProps {
     className?: string;
 }
 
-export const WalletConnectButton = ({ onWalletConnected, className }: WalletConnectButtonProps) => {
+export const WalletConnectButton = ({
+    onWalletConnected,
+    className,
+}: WalletConnectButtonProps) => {
     const wallet = useWallet();
-    const { connected, select, address, connecting, configuredWallets } = wallet;
+    const { connected, select, address, connecting, configuredWallets } =
+        wallet;
     const [error, setError] = useState<string | null>(null);
 
     console.log('Wallet state:', {
         connected,
         connecting,
         configuredWallets,
-        allWalletState: wallet
+        allWalletState: wallet,
     });
 
     const handleConnect = async (walletName: string) => {
@@ -25,7 +29,9 @@ export const WalletConnectButton = ({ onWalletConnected, className }: WalletConn
             await select(walletName);
         } catch (e) {
             console.error('Failed to connect wallet:', e);
-            setError('Failed to connect wallet. Please make sure your wallet is installed and unlocked.');
+            setError(
+                'Failed to connect wallet. Please make sure your wallet is installed and unlocked.'
+            );
         }
     };
 
@@ -73,9 +79,15 @@ export const WalletConnectButton = ({ onWalletConnected, className }: WalletConn
                         className="flex items-center justify-center gap-2"
                     >
                         {wallet.iconUrl && (
-                            <img src={wallet.iconUrl} alt={wallet.name} className="w-5 h-5" />
+                            <img
+                                src={wallet.iconUrl}
+                                alt={wallet.name}
+                                className="w-5 h-5"
+                            />
                         )}
-                        {connecting ? 'Connecting...' : `Connect ${wallet.name}`}
+                        {connecting
+                            ? 'Connecting...'
+                            : `Connect ${wallet.name}`}
                     </Button>
                 ))}
             </div>
@@ -84,4 +96,4 @@ export const WalletConnectButton = ({ onWalletConnected, className }: WalletConn
             )}
         </div>
     );
-}; 
+};

@@ -12,32 +12,34 @@ interface VerificationStatusResponse {
  */
 export async function checkVerificationStatus(): Promise<boolean> {
     const url = getApiUrl('/auth/ami-verified');
-    
+
     try {
         const response = await fetch(url, {
             method: 'GET',
             credentials: 'include',
             headers: {
-                'Content-Type': 'application/json'
-            }
+                'Content-Type': 'application/json',
+            },
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new ApiError('Failed to check verification status', response.status, errorData);
+            throw new ApiError(
+                'Failed to check verification status',
+                response.status,
+                errorData
+            );
         }
 
-        const data = await response.json() as VerificationStatusResponse;
+        const data = (await response.json()) as VerificationStatusResponse;
         return data.verified;
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
-        throw new ApiError(
-            'Failed to check verification status',
-            500,
-            { message: error instanceof Error ? error.message : 'Unknown error' }
-        );
+        throw new ApiError('Failed to check verification status', 500, {
+            message: error instanceof Error ? error.message : 'Unknown error',
+        });
     }
 }
 
@@ -48,7 +50,11 @@ export async function checkVerificationStatus(): Promise<boolean> {
 export async function handleEmailVerificationRedirect(
     params: URLSearchParams,
     currentUser: User | null,
-    setAuth: (user: User | null, token: string | null, companyId?: string | null) => void,
+    setAuth: (
+        user: User | null,
+        token: string | null,
+        companyId?: string | null
+    ) => void,
     companyId: string | null
 ): Promise<boolean> {
     const verified = params.get('verified') === 'true';
@@ -64,7 +70,7 @@ export async function handleEmailVerificationRedirect(
         const updatedUser = {
             ...currentUser,
             email_verified: true,
-            email: decodeURIComponent(email)
+            email: decodeURIComponent(email),
         };
 
         // Update auth state with the new token and verified user

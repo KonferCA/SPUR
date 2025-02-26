@@ -23,7 +23,8 @@ function ProfileSettings() {
     const { data: profile, isLoading } = useQuery({
         queryKey: ['profile', user?.id],
         queryFn: () => {
-            if (!accessToken || !user?.id) throw new Error('No access token or user ID');
+            if (!accessToken || !user?.id)
+                throw new Error('No access token or user ID');
             return getUserProfile(accessToken, user.id);
         },
         enabled: !!accessToken && !!user?.id, // Only run query if we have a token and user ID
@@ -32,7 +33,8 @@ function ProfileSettings() {
     // Update profile mutation
     const { mutate: updateProfile, isLoading: isUpdating } = useMutation({
         mutationFn: (data: UpdateProfileRequest) => {
-            if (!accessToken || !user?.id) throw new Error('No access token or user ID');
+            if (!accessToken || !user?.id)
+                throw new Error('No access token or user ID');
             return updateUserProfile(accessToken, user.id, data);
         },
         onSuccess: () => {
@@ -85,7 +87,11 @@ function ProfileSettings() {
         return <SettingsPage title="Personal Profile">Loading...</SettingsPage>;
     }
 
-    const isEmptyProfile = !profile?.first_name && !profile?.last_name && !profile?.title && !profile?.bio;
+    const isEmptyProfile =
+        !profile?.first_name &&
+        !profile?.last_name &&
+        !profile?.title &&
+        !profile?.bio;
 
     return (
         <SettingsPage title="Personal Profile" error={error}>
@@ -93,7 +99,7 @@ function ProfileSettings() {
                 <div className="mb-8">
                     <ProfilePictureUpload />
                 </div>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
                         <TextInput
@@ -150,4 +156,3 @@ function ProfileSettings() {
         </SettingsPage>
     );
 }
-

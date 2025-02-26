@@ -21,10 +21,14 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
 
     const handleWithdraw = async () => {
         if (!accessToken) return;
-        
+
         try {
             setIsWithdrawing(true);
-            await updateProjectStatus(accessToken, data.id, ProjectStatusEnum.Withdrawn);
+            await updateProjectStatus(
+                accessToken,
+                data.id,
+                ProjectStatusEnum.Withdrawn
+            );
             push({
                 message: 'Project withdrawn successfully',
                 level: 'success',
@@ -32,7 +36,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
             window.location.reload();
         } catch (error: any) {
             console.error('Failed to withdraw project:', error);
-            
+
             if (error?.response?.status === 401) {
                 push({
                     message: 'Your session has expired. Please sign in again.',
@@ -40,12 +44,14 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                 });
             } else if (error?.response?.status === 403) {
                 push({
-                    message: 'You do not have permission to withdraw this project.',
+                    message:
+                        'You do not have permission to withdraw this project.',
                     level: 'error',
                 });
             } else {
                 push({
-                    message: 'Unable to withdraw your project. Please try again or contact support if the issue persists.',
+                    message:
+                        'Unable to withdraw your project. Please try again or contact support if the issue persists.',
                     level: 'error',
                 });
             }
@@ -66,7 +72,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                     </div>
                     <div className="flex items-center gap-3">
                         {canWithdraw && (
-                            <Button 
+                            <Button
                                 variant="outline"
                                 onClick={() => setShowWithdrawModal(true)}
                             >

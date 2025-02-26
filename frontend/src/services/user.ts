@@ -9,7 +9,10 @@ import type {
 /**
  * Get the current user's profile
  */
-export async function getUserProfile(token: string, userId: string): Promise<ProfileResponse> {
+export async function getUserProfile(
+    token: string,
+    userId: string
+): Promise<ProfileResponse> {
     const url = getApiUrl(`users/${userId}/details`);
     const response = await fetch(url, {
         method: 'GET',
@@ -95,4 +98,3 @@ export async function initialUserProfile(
         );
     }
 }
-

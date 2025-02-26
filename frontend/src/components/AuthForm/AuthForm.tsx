@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Button, TextInput } from '@/components';
 import type { AuthFormProps, AuthFormData } from '@/types/auth';
 
-export function AuthForm({ 
-    onSubmit, 
-    isLoading, 
-    errors, 
-    mode, 
-    onToggleMode 
+export function AuthForm({
+    onSubmit,
+    isLoading,
+    errors,
+    mode,
+    onToggleMode,
 }: AuthFormProps) {
     const [formData, setFormData] = useState<AuthFormData>({
         email: '',
@@ -29,27 +29,34 @@ export function AuthForm({
         const { name, value } = e.target;
         if (name === 'confirmPassword') {
             setConfirmPassword(value);
-            setConfirmError(value !== formData.password ? 'Passwords do not match' : '');
+            setConfirmError(
+                value !== formData.password ? 'Passwords do not match' : ''
+            );
         } else {
-            setFormData(prev => ({
+            setFormData((prev) => ({
                 ...prev,
                 [name]: value,
             }));
             if (name === 'password' && mode === 'register') {
-                setConfirmError(value !== confirmPassword ? 'Passwords do not match' : '');
+                setConfirmError(
+                    value !== confirmPassword ? 'Passwords do not match' : ''
+                );
             }
         }
     };
 
-    const isValidForm = mode === 'login' || 
+    const isValidForm =
+        mode === 'login' ||
         (formData.password && formData.password === confirmPassword);
 
     return (
         <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
             <h2 className="text-2xl font-semibold text-center mb-6">
-                {mode === 'login' ? 'Sign In to Your Account' : 'Create Your Account'}
+                {mode === 'login'
+                    ? 'Sign In to Your Account'
+                    : 'Create Your Account'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
                 <TextInput
                     label="Email"
@@ -70,9 +77,13 @@ export function AuthForm({
                     value={formData.password}
                     onChange={handleChange}
                     error={errors.password}
-                    placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'}
+                    placeholder={
+                        mode === 'login'
+                            ? 'Enter your password'
+                            : 'Create a password'
+                    }
                 />
-                
+
                 {mode === 'register' && (
                     <TextInput
                         label="Confirm Password"
@@ -94,17 +105,21 @@ export function AuthForm({
                         variant="primary"
                         disabled={isLoading || !isValidForm}
                     >
-                        {isLoading 
-                            ? (mode === 'login' ? 'Signing in...' : 'Creating account...') 
-                            : (mode === 'login' ? 'Sign In' : 'Create Account')}
+                        {isLoading
+                            ? mode === 'login'
+                                ? 'Signing in...'
+                                : 'Creating account...'
+                            : mode === 'login'
+                              ? 'Sign In'
+                              : 'Create Account'}
                     </Button>
                 </div>
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        {mode === 'login' 
-                            ? "Don't have an account?" 
-                            : "Already have an account?"}
+                        {mode === 'login'
+                            ? "Don't have an account?"
+                            : 'Already have an account?'}
                     </p>
                     <Button
                         type="button"

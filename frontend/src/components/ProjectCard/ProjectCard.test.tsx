@@ -18,17 +18,15 @@ vi.mock('@tanstack/react-router', async () => {
 const renderWithProviders = async (ui: React.ReactNode) => {
     const rendered = render(
         <NotificationProvider>
-            <AuthProvider>
-                {ui}
-            </AuthProvider>
+            <AuthProvider>{ui}</AuthProvider>
         </NotificationProvider>
     );
-    
+
     // Wait for auth state to settle
     await waitFor(() => {
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
-    
+
     return rendered;
 };
 

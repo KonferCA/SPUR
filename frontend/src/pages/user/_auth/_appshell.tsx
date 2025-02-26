@@ -7,7 +7,7 @@ import { SETTINGS_ROUTES } from '@/constants/settings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { ProfilePicture } from '@/components/ProfilePicture/ProfilePicture';
-import { IoSettingsOutline, IoLogOutOutline } from "react-icons/io5";
+import { IoSettingsOutline, IoLogOutOutline } from 'react-icons/io5';
 
 export const Route = createFileRoute('/user/_auth/_appshell')({
     component: RouteComponent,
@@ -40,7 +40,7 @@ function RouteComponent() {
 
     const handleSettingsClick = () => {
         setIsDropdownOpen(false);
-    }
+    };
 
     const isSettingsPage = location.pathname.includes('/settings');
 
@@ -123,9 +123,10 @@ function RouteComponent() {
                             to={route.path}
                             className={`
                                 flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md 
-                                ${ location.pathname === route.path
-                                    ? 'bg-gray-50 text-gray-900'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                ${
+                                    location.pathname === route.path
+                                        ? 'bg-gray-50 text-gray-900'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                 }
                             `}
                         >
