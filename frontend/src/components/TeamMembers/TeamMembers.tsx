@@ -5,6 +5,7 @@ import {
     TextInput,
     UploadableFile,
     SocialLinks,
+    Button,
 } from '@components';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 import type { TeamMember } from '@/types';
@@ -449,8 +450,8 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
                 {/* Member Button */}
                 {!disabled && !isAdding && (
-                    <button
-                        type="button"
+                    <Button
+                        variant="primary"
                         onClick={() => {
                             setSocialLinks([]);
                             setNewMember({});
@@ -461,7 +462,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         <span className="text-md font-medium text-white">Add new</span>
                         <span className="text-md font-medium text-white">member</span>
                         <FiPlus size={24} className="text-white mt-1" />
-                    </button>
+                    </Button>
                 )}
             </div>
 
@@ -553,8 +554,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 primaryButtonClassName="bg-[#F15A24] hover:bg-[#D14A14]"
                 secondaryActionText="Cancel"
                 additionalButtons={
-                    <button
-                        type="button"
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => {
                             if (editingMember) {
                                 handleRemove(editingMember);
@@ -562,10 +564,10 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                                 setEditingMember(null);
                             }
                         }}
-                        className="rounded-lg border border-red-300 bg-white px-4 py-2 text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        className="text-red-600 border-red-300 hover:bg-red-50 focus:ring-red-500 flex items-center justify-center"
                     >
                         Remove member
-                    </button>
+                    </Button>
                 }
             >
                 <div className="space-y-6">
