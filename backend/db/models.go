@@ -463,11 +463,7 @@ type TeamMember struct {
 	FoundersAgreementInternalUrl *string `json:"founders_agreement_internal_url"`
 	CreatedAt                    int64   `json:"created_at"`
 	UpdatedAt                    int64   `json:"updated_at"`
-	FacebookUrl                  *string `json:"facebook_url"`
-	InstagramUrl                 *string `json:"instagram_url"`
-	XUrl                         *string `json:"x_url"`
-	BlueskyUrl                   *string `json:"bluesky_url"`
-	DiscordUrl                   *string `json:"discord_url"`
+	SocialLinks                  []byte  `json:"social_links"`
 }
 
 type Transaction struct {

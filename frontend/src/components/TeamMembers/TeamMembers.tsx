@@ -56,13 +56,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         lastName: user.lastName || '',
                         title: userProfile.title || 'Account Owner',
                         detailedBiography: userProfile.bio || '',
-                        linkedinUrl: userProfile.linkedin_url || '',
-                        facebookUrl: '',
-                        instagramUrl: '',
-                        xUrl: '',
-                        blueskyUrl: '',
-                        discordUrl: '',
-                        personalWebsite: '',
+                        socialLinks: [],
                         resumeExternalUrl: '',
                         resumeInternalUrl: '',
                         introduction: '',
@@ -100,13 +94,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         lastName: user.lastName || '',
                         title: 'Account Owner',
                         detailedBiography: '',
-                        linkedinUrl: '',
-                        facebookUrl: '',
-                        instagramUrl: '',
-                        xUrl: '',
-                        blueskyUrl: '',
-                        discordUrl: '',
-                        personalWebsite: '',
+                        socialLinks: [],
                         resumeExternalUrl: '',
                         resumeInternalUrl: '',
                         introduction: '',
@@ -135,6 +123,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         initializeMembers();
     }, [user, accessToken, initialValue]);
 
+    // Add a cleanup effect when forms are closed
+    useEffect(() => {
+        if (!isAdding && !isEditing) {
+            // If neither form is open, make sure socialLinks are reset
+            setSocialLinks([]);
+        }
+    }, [isAdding, isEditing]);
+
     const checkAllRequired = () => {
         return (
             newMember.firstName &&
@@ -160,14 +156,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             const res = await addTeamMember(accessToken, {
                 companyId,
                 member: {
-                    ...member,
-                    xUrl: member.xUrl || '',
-                    facebookUrl: member.facebookUrl || '',
-                    instagramUrl: member.instagramUrl || '',
-                    linkedinUrl: member.linkedinUrl || '',
-                    blueskyUrl: member.blueskyUrl || '',
-                    discordUrl: member.discordUrl || '',
-                    personalWebsite: member.personalWebsite || '',
+                    ...member
                 },
             });
             const originalId = member.id;
@@ -231,13 +220,6 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 lastName: newMember.lastName!,
                 title: newMember.title!,
                 detailedBiography: newMember.detailedBiography!,
-                linkedinUrl: socialLinks.find(link => link.platform === SocialPlatform.LinkedIn)?.urlOrHandle || '',
-                facebookUrl: socialLinks.find(link => link.platform === SocialPlatform.Facebook)?.urlOrHandle || '',
-                instagramUrl: socialLinks.find(link => link.platform === SocialPlatform.Instagram)?.urlOrHandle || '',
-                xUrl: socialLinks.find(link => link.platform === SocialPlatform.X)?.urlOrHandle || '',
-                blueskyUrl: socialLinks.find(link => link.platform === SocialPlatform.BlueSky)?.urlOrHandle || '',
-                discordUrl: socialLinks.find(link => link.platform === SocialPlatform.Discord)?.urlOrHandle || '',
-                personalWebsite: socialLinks.find(link => link.platform === SocialPlatform.CustomUrl)?.urlOrHandle || '',
                 resumeExternalUrl: '',
                 resumeInternalUrl: '',
                 introduction: newMember.detailedBiography!,
@@ -249,6 +231,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 isAccountOwner: false,
                 isLoading: true,
                 created_at: Date.now(),
+                socialLinks: [...socialLinks],
             };
 
             saveToDatabase(member);
@@ -306,93 +289,24 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         setEditingMember(member);
         setIsEditing(true);
         
-        // Initialize social links array
-        const links: SocialLink[] = [];
-
-        // Helper function to strip URL prefixes
-        const stripPrefix = (url: string, platform: SocialPlatform) => {
-            if (!url) return '';
-            try {
-                const urlObj = new URL(url);
-                switch (platform) {
-                    case SocialPlatform.X:
-                        return urlObj.pathname.split('/').pop() || '';
-                    case SocialPlatform.Discord:
-                        return urlObj.pathname.split('/').pop() || '';
-                    case SocialPlatform.BlueSky:
-                        return urlObj.pathname.split('/').pop() || '';
-                    case SocialPlatform.Facebook:
-                        return urlObj.pathname.split('/').pop() || '';
-                    case SocialPlatform.Instagram:
-                        return urlObj.pathname.split('/').pop() || '';
-                    case SocialPlatform.LinkedIn:
-                        return urlObj.pathname.split('/').pop() || '';
-                    default:
-                        return url;
-                }
-            } catch {
-                // If not a valid URL, return the original string without @ if it exists lol
-                return url.startsWith('@') ? url.substring(1) : url;
-            }
-        };
-
-        if (member.xUrl) {
-            links.push({
-                id: 'x',
-                platform: SocialPlatform.X,
-                urlOrHandle: stripPrefix(member.xUrl, SocialPlatform.X)
-            });
-        }
-        if (member.facebookUrl) {
-            links.push({
-                id: 'facebook',
-                platform: SocialPlatform.Facebook,
-                urlOrHandle: stripPrefix(member.facebookUrl, SocialPlatform.Facebook)
-            });
-        }
-        if (member.instagramUrl) {
-            links.push({
-                id: 'instagram',
-                platform: SocialPlatform.Instagram,
-                urlOrHandle: stripPrefix(member.instagramUrl, SocialPlatform.Instagram)
-            });
-        }
-        if (member.linkedinUrl) {
-            links.push({
-                id: 'linkedin',
-                platform: SocialPlatform.LinkedIn,
-                urlOrHandle: stripPrefix(member.linkedinUrl, SocialPlatform.LinkedIn)
-            });
-        }
-        if (member.blueskyUrl) {
-            links.push({
-                id: 'bluesky',
-                platform: SocialPlatform.BlueSky,
-                urlOrHandle: stripPrefix(member.blueskyUrl, SocialPlatform.BlueSky)
-            });
-        }
-        if (member.discordUrl) {
-            links.push({
-                id: 'discord',
-                platform: SocialPlatform.Discord,
-                urlOrHandle: stripPrefix(member.discordUrl, SocialPlatform.Discord)
-            });
-        }
-        if (member.personalWebsite) {
-            links.push({
-                id: 'personal-website',
-                platform: SocialPlatform.CustomUrl,
-                urlOrHandle: member.personalWebsite
-            });
-        }
-
+        console.log('Starting edit for member with social links:', member.socialLinks);
+        
+        // Set the socialLinks array from the member's data
+        // Ensure each link has a unique ID
+        const links = (member.socialLinks || []).map(link => ({
+            ...link,
+            id: link.id || Math.random().toString(36).substring(2, 9)
+        }));
+        
+        console.log('Initialized social links for editing:', links);
+        
         setSocialLinks(links);
     };
 
     const handleEdit = async () => {
         if (!editingMember) return;
         
-        console.log('Handling edit with social links:', socialLinks);
+        console.log('Starting handleEdit with socialLinks:', socialLinks);
         
         // Helper function to format URLs
         const formatUrl = (handle: string, platform: SocialPlatform): string => {
@@ -425,13 +339,10 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             lastName: newMember.lastName || editingMember.lastName,
             title: newMember.title || editingMember.title,
             detailedBiography: newMember.detailedBiography || editingMember.detailedBiography,
-            linkedinUrl: formatUrl(socialLinks.find(link => link.platform === SocialPlatform.LinkedIn)?.urlOrHandle || '', SocialPlatform.LinkedIn),
-            facebookUrl: formatUrl(socialLinks.find(link => link.platform === SocialPlatform.Facebook)?.urlOrHandle || '', SocialPlatform.Facebook),
-            instagramUrl: formatUrl(socialLinks.find(link => link.platform === SocialPlatform.Instagram)?.urlOrHandle || '', SocialPlatform.Instagram),
-            xUrl: formatUrl(socialLinks.find(link => link.platform === SocialPlatform.X)?.urlOrHandle || '', SocialPlatform.X),
-            blueskyUrl: formatUrl(socialLinks.find(link => link.platform === SocialPlatform.BlueSky)?.urlOrHandle || '', SocialPlatform.BlueSky),
-            discordUrl: formatUrl(socialLinks.find(link => link.platform === SocialPlatform.Discord)?.urlOrHandle || '', SocialPlatform.Discord),
-            personalWebsite: socialLinks.find(link => link.platform === SocialPlatform.CustomUrl)?.urlOrHandle || '',
+            socialLinks: socialLinks.map(link => ({
+                ...link,
+                urlOrHandle: formatUrl(link.urlOrHandle, link.platform as SocialPlatform)
+            })),
             isLoading: false,
             resumeExternalUrl: editingMember.resumeExternalUrl,
             resumeInternalUrl: editingMember.resumeInternalUrl,
@@ -448,15 +359,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         
         console.log('Updated member:', {
             id: updatedMember.id,
-            socials: {
-                xUrl: updatedMember.xUrl,
-                facebookUrl: updatedMember.facebookUrl,
-                instagramUrl: updatedMember.instagramUrl,
-                linkedinUrl: updatedMember.linkedinUrl,
-                blueskyUrl: updatedMember.blueskyUrl,
-                discordUrl: updatedMember.discordUrl,
-                personalWebsite: updatedMember.personalWebsite
-            }
+            socials: updatedMember.socialLinks
         });
 
         // Update in database
@@ -465,6 +368,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 message: 'Updating team member...',
                 level: 'info',
                 autoClose: false,
+            });
+
+            console.log('About to call updateTeamMember with member:', {
+                ...updatedMember,
+                socialLinks: updatedMember.socialLinks
             });
 
             await updateTeamMember(accessToken!, {
@@ -540,7 +448,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 {/* Member Button */}
                 {!disabled && !isAdding && (
                     <button
-                        onClick={() => setIsAdding(true)}
+                        onClick={() => {
+                            setSocialLinks([]);
+                            setNewMember({});
+                            setIsAdding(true);
+                        }}
                         className="w-32 h-32 rounded-lg bg-[#154261] hover:bg-[#2B4A67] flex flex-col items-center justify-center space-y-2"
                     >
                         <span className="text-md font-medium text-white">Add new</span>
@@ -619,7 +531,6 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     <SocialLinks
                         value={socialLinks}
                         onChange={setSocialLinks}
-                        onRemove={(link) => setSocialLinks(prev => prev.filter(l => l.id !== link.id))}
                     />
                 </div>
             </ConfirmationModal>
@@ -706,7 +617,6 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     <SocialLinks
                         value={socialLinks}
                         onChange={setSocialLinks}
-                        onRemove={(link) => setSocialLinks(prev => prev.filter(l => l.id !== link.id))}
                     />
                 </div>
             </ConfirmationModal>

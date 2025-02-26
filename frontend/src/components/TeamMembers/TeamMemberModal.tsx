@@ -11,14 +11,7 @@ export interface TeamMemberFormData {
     last_name: string;
     title: string;
     detailed_biography: string;
-    linkedin_url: string;
-    facebook_url: string;
-    instagram_url: string;
-    x_url: string;
-    bluesky_url: string;
-    discord_url: string;
     is_account_owner: boolean;
-    personal_website: string | null;
     commitment_type: string;
     introduction: string;
     industry_experience: string;
@@ -44,12 +37,9 @@ interface FormErrors {
     last_name?: string;
     title?: string;
     detailed_biography?: string;
-    linkedin_url?: string;
-    personal_website?: string;
     commitment_type?: string;
     introduction?: string;
     industry_experience?: string;
-    discord_url?: string;
 }
 
 const validateUrl = (url: string): boolean => {
@@ -74,14 +64,7 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
         last_name: initialData.last_name || '',
         title: initialData.title || '',
         detailed_biography: initialData.detailed_biography || '',
-        linkedin_url: initialData.linkedin_url || '',
-        facebook_url: initialData.facebook_url || '',
-        instagram_url: initialData.instagram_url || '',
-        x_url: initialData.x_url || '',
-        bluesky_url: initialData.bluesky_url || '',
-        discord_url: initialData.discord_url || '',
         is_account_owner: initialData.is_account_owner || false,
-        personal_website: initialData.personal_website || null,
         commitment_type: initialData.commitment_type || 'Full-time',
         introduction: initialData.introduction || '',
         industry_experience: initialData.industry_experience || '',
@@ -96,29 +79,26 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
 
     // Update form data when initialData changes
     useEffect(() => {
-        // Convert individual social media URLs to socialLinks array
-        const socialLinks: SocialLink[] = [];
-        if (initialData.linkedin_url) socialLinks.push({ id: Math.random().toString(36).substring(2, 9), platform: SocialPlatform.LinkedIn, urlOrHandle: initialData.linkedin_url });
-        if (initialData.facebook_url) socialLinks.push({ id: Math.random().toString(36).substring(2, 9), platform: SocialPlatform.Facebook, urlOrHandle: initialData.facebook_url });
-        if (initialData.instagram_url) socialLinks.push({ id: Math.random().toString(36).substring(2, 9), platform: SocialPlatform.Instagram, urlOrHandle: initialData.instagram_url });
-        if (initialData.x_url) socialLinks.push({ id: Math.random().toString(36).substring(2, 9), platform: SocialPlatform.X, urlOrHandle: initialData.x_url });
-        if (initialData.bluesky_url) socialLinks.push({ id: Math.random().toString(36).substring(2, 9), platform: SocialPlatform.BlueSky, urlOrHandle: initialData.bluesky_url });
-        if (initialData.discord_url) socialLinks.push({ id: Math.random().toString(36).substring(2, 9), platform: SocialPlatform.Discord, urlOrHandle: initialData.discord_url });
-        if (initialData.personal_website) socialLinks.push({ id: Math.random().toString(36).substring(2, 9), platform: SocialPlatform.CustomUrl, urlOrHandle: initialData.personal_website });
+        // Check if we have socialLinks in the initialData
+        const socialLinks = initialData.socialLinks || [];
+        
+        // Make sure all social links have IDs
+        const processedSocialLinks = socialLinks.map(link => {
+            if (!link.id) {
+                return {
+                    ...link,
+                    id: Math.random().toString(36).substring(2, 9)
+                };
+            }
+            return link;
+        });
 
         setFormData({
             first_name: initialData.first_name || '',
             last_name: initialData.last_name || '',
             title: initialData.title || '',
             detailed_biography: initialData.detailed_biography || '',
-            linkedin_url: initialData.linkedin_url || '',
-            facebook_url: initialData.facebook_url || '',
-            instagram_url: initialData.instagram_url || '',
-            x_url: initialData.x_url || '',
-            bluesky_url: initialData.bluesky_url || '',
-            discord_url: initialData.discord_url || '',
             is_account_owner: initialData.is_account_owner || false,
-            personal_website: initialData.personal_website || null,
             commitment_type: initialData.commitment_type || 'Full-time',
             introduction: initialData.introduction || '',
             industry_experience: initialData.industry_experience || '',
@@ -127,7 +107,7 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
             resume_internal_url: initialData.resume_internal_url || '',
             founders_agreement_external_url: initialData.founders_agreement_external_url || '',
             founders_agreement_internal_url: initialData.founders_agreement_internal_url || '',
-            socialLinks: socialLinks,
+            socialLinks: processedSocialLinks,
         });
     }, [initialData]);
 
@@ -142,15 +122,6 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
         if (!formData.introduction) newErrors.introduction = 'Introduction is required';
         if (!formData.industry_experience) newErrors.industry_experience = 'Industry experience is required';
 
-        // URL validation - only validate URLs that are present in socialLinks
-        const socialLinks = formData.socialLinks ?? [];
-        for (const link of socialLinks) {
-            if (!validateUrl(link.urlOrHandle)) {
-                if (link.platform === SocialPlatform.LinkedIn) newErrors.linkedin_url = 'Please enter a valid LinkedIn URL';
-                if (link.platform === SocialPlatform.CustomUrl) newErrors.personal_website = 'Please enter a valid website URL';
-            }
-        }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -158,20 +129,16 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (validateForm()) {
-            // Transform social links into the expected format
+            // Get social links array from formData
             const socialLinks = formData.socialLinks ?? [];
+            
+            // Set up submission data with the socialLinks array
             const submissionData: TeamMemberFormData = {
                 first_name: formData.first_name,
                 last_name: formData.last_name,
                 title: formData.title,
                 detailed_biography: formData.detailed_biography,
-                linkedin_url: socialLinks.find(link => link.platform === SocialPlatform.LinkedIn)?.urlOrHandle || '',
-                facebook_url: socialLinks.find(link => link.platform === SocialPlatform.Facebook)?.urlOrHandle || '',
-                instagram_url: socialLinks.find(link => link.platform === SocialPlatform.Instagram)?.urlOrHandle || '',
-                x_url: socialLinks.find(link => link.platform === SocialPlatform.X)?.urlOrHandle || '',
-                bluesky_url: socialLinks.find(link => link.platform === SocialPlatform.BlueSky)?.urlOrHandle || '',
-                discord_url: socialLinks.find(link => link.platform === SocialPlatform.Discord)?.urlOrHandle || '',
-                personal_website: socialLinks.find(link => link.platform === SocialPlatform.CustomUrl)?.urlOrHandle || null,
+                socialLinks: socialLinks,
                 commitment_type: formData.commitment_type,
                 introduction: formData.introduction,
                 industry_experience: formData.industry_experience,
@@ -181,7 +148,6 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                 founders_agreement_external_url: formData.founders_agreement_external_url || '',
                 founders_agreement_internal_url: formData.founders_agreement_internal_url || '',
                 is_account_owner: formData.is_account_owner,
-                socialLinks: socialLinks,
             };
 
             onSubmit(submissionData);
@@ -342,30 +308,11 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                                         }));
                                         // Clear any previous errors related to social links
                                         setErrors(prev => ({
-                                            ...prev,
-                                            linkedin_url: undefined,
-                                            personal_website: undefined,
-                                            facebook_url: undefined,
-                                            instagram_url: undefined,
-                                            x_url: undefined,
-                                            bluesky_url: undefined,
-                                            discord_url: undefined,
-                                        }));
-                                    }}
-                                    onRemove={(link: SocialLink) => {
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            socialLinks: prev.socialLinks.filter(l => l.id !== link.id)
+                                            ...prev
                                         }));
                                     }}
                                 />
                             </div>
-                            {errors.linkedin_url && (
-                                <p className="mt-1 text-sm text-red-500">{errors.linkedin_url}</p>
-                            )}
-                            {errors.personal_website && (
-                                <p className="mt-1 text-sm text-red-500">{errors.personal_website}</p>
-                            )}
                         </div>
 
                         <div className="flex justify-between pt-4 border-t">

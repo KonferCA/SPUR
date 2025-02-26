@@ -28,7 +28,7 @@ export interface SocialLinksProps {
     value: SocialLink[];
     required?: boolean;
     onChange: (links: SocialLink[]) => void;
-    onRemove: (link: SocialLink) => void;
+    onRemove?: (link: SocialLink) => void;
 }
 
 export const SocialLinks: React.FC<SocialLinksProps> = ({
@@ -56,6 +56,23 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
             setError('');
             setCurrentSocialPlatform(null);
         }, 350);
+    };
+
+    const handleRemoveSocial = (socialToRemove: SocialLink) => {
+        console.log('Removing social link:', socialToRemove);
+        
+        // Filter out the social link to remove by platform
+        const updatedLinks = value.filter(social => social.platform !== socialToRemove.platform);
+        
+        console.log('Updated links after removal:', updatedLinks);
+        
+        // Call the parent's onChange with the updated list
+        onChange(updatedLinks);
+        
+        // Also call the onRemove callback if provided
+        if (onRemove) {
+            onRemove(socialToRemove);
+        }
     };
 
     const handleConfirmSocial = () => {
@@ -106,11 +123,11 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
                     ))}
                 </div>
                 <div className="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-4">
-                    {value.map((social) => (
+                    {value.map((social, index) => (
                         <SocialCard
-                            key={social.id}
+                            key={`${social.platform}-${social.id || index}`}
                             data={social}
-                            onRemove={onRemove}
+                            onRemove={handleRemoveSocial}
                         />
                     ))}
                 </div>

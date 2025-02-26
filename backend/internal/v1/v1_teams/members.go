@@ -42,22 +42,10 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
-	// Convert empty strings to nil for optional URL fields
-	var facebookUrl, instagramUrl, xUrl, blueskyUrl, discordUrl *string
-	if req.FacebookUrl != "" {
-		facebookUrl = &req.FacebookUrl
-	}
-	if req.InstagramUrl != "" {
-		instagramUrl = &req.InstagramUrl
-	}
-	if req.XUrl != "" {
-		xUrl = &req.XUrl
-	}
-	if req.BlueskyUrl != "" {
-		blueskyUrl = &req.BlueskyUrl
-	}
-	if req.DiscordUrl != "" {
-		discordUrl = &req.DiscordUrl
+	// Process social links from the socialLinks array
+	socialLinksJSON, err := v1_common.ProcessSocialLinksRequest(req.SocialLinks)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid social links format", err)
 	}
 
 	// Create team member in database
@@ -68,11 +56,7 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		LastName:                     req.LastName,
 		Title:                        req.Title,
 		LinkedinUrl:                  req.LinkedinUrl,
-		FacebookUrl:                  facebookUrl,
-		InstagramUrl:                 instagramUrl,
-		XUrl:                        xUrl,
-		BlueskyUrl:                  blueskyUrl,
-		DiscordUrl:                  discordUrl,
+		SocialLinks:                  socialLinksJSON,
 		IsAccountOwner:               false,
 		PersonalWebsite:              req.PersonalWebsite,
 		CommitmentType:               req.CommitmentType,
@@ -89,29 +73,9 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create team member", err)
 	}
 
-	// Convert nil pointers to empty strings for response
-	facebookUrlStr := ""
-	if member.FacebookUrl != nil {
-		facebookUrlStr = *member.FacebookUrl
-	}
-	instagramUrlStr := ""
-	if member.InstagramUrl != nil {
-		instagramUrlStr = *member.InstagramUrl
-	}
-	xUrlStr := ""
-	if member.XUrl != nil {
-		xUrlStr = *member.XUrl
-	}
-	blueskyUrlStr := ""
-	if member.BlueskyUrl != nil {
-		blueskyUrlStr = *member.BlueskyUrl
-	}
-	discordUrlStr := ""
-	if member.DiscordUrl != nil {
-		discordUrlStr = *member.DiscordUrl
-	}
+	// Process social links
+	socialLinks := v1_common.ProcessSocialLinks(member)
 
-	// Convert nil pointers to empty strings for other fields
 	previousWorkStr := ""
 	if member.PreviousWork != nil {
 		previousWorkStr = *member.PreviousWork
@@ -140,13 +104,7 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		FirstName:                    member.FirstName,
 		LastName:                     member.LastName,
 		Title:                        member.Title,
-		LinkedinUrl:                  member.LinkedinUrl,
-		FacebookUrl:                  facebookUrlStr,
-		InstagramUrl:                 instagramUrlStr,
-		XUrl:                        xUrlStr,
-		BlueskyUrl:                  blueskyUrlStr,
-		DiscordUrl:                  discordUrlStr,
-		PersonalWebsite:              member.PersonalWebsite,
+		SocialLinks:                  socialLinks,
 		IsAccountOwner:               member.IsAccountOwner,
 		CommitmentType:               member.CommitmentType,
 		Introduction:                 member.Introduction,
@@ -189,29 +147,9 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 	// Convert to response type
 	var teamMembers []TeamMemberResponse
 	for _, member := range members {
-		// Convert nil pointers to empty strings
-		facebookUrlStr := ""
-		if member.FacebookUrl != nil {
-			facebookUrlStr = *member.FacebookUrl
-		}
-		instagramUrlStr := ""
-		if member.InstagramUrl != nil {
-			instagramUrlStr = *member.InstagramUrl
-		}
-		xUrlStr := ""
-		if member.XUrl != nil {
-			xUrlStr = *member.XUrl
-		}
-		blueskyUrlStr := ""
-		if member.BlueskyUrl != nil {
-			blueskyUrlStr = *member.BlueskyUrl
-		}
-		discordUrlStr := ""
-		if member.DiscordUrl != nil {
-			discordUrlStr = *member.DiscordUrl
-		}
+		// Process social links
+		socialLinks := v1_common.ProcessSocialLinks(member)
 
-		// Convert other pointer fields to empty strings if nil
 		previousWorkStr := ""
 		if member.PreviousWork != nil {
 			previousWorkStr = *member.PreviousWork
@@ -239,13 +177,7 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 			FirstName:                    member.FirstName,
 			LastName:                     member.LastName,
 			Title:                        member.Title,
-			LinkedinUrl:                  member.LinkedinUrl,
-			FacebookUrl:                  facebookUrlStr,
-			InstagramUrl:                 instagramUrlStr,
-			XUrl:                        xUrlStr,
-			BlueskyUrl:                  blueskyUrlStr,
-			DiscordUrl:                  discordUrlStr,
-			PersonalWebsite:              member.PersonalWebsite,
+			SocialLinks:                  socialLinks,
 			IsAccountOwner:               member.IsAccountOwner,
 			CommitmentType:               member.CommitmentType,
 			Introduction:                 member.Introduction,
@@ -299,29 +231,9 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to retrieve team member", err)
 	}
 
-	// Convert nil pointers to empty strings
-	facebookUrlStr := ""
-	if member.FacebookUrl != nil {
-		facebookUrlStr = *member.FacebookUrl
-	}
-	instagramUrlStr := ""
-	if member.InstagramUrl != nil {
-		instagramUrlStr = *member.InstagramUrl
-	}
-	xUrlStr := ""
-	if member.XUrl != nil {
-		xUrlStr = *member.XUrl
-	}
-	blueskyUrlStr := ""
-	if member.BlueskyUrl != nil {
-		blueskyUrlStr = *member.BlueskyUrl
-	}
-	discordUrlStr := ""
-	if member.DiscordUrl != nil {
-		discordUrlStr = *member.DiscordUrl
-	}
+	// Process social links
+	socialLinks := v1_common.ProcessSocialLinks(member)
 
-	// Convert other pointer fields to empty strings if nil
 	previousWorkStr := ""
 	if member.PreviousWork != nil {
 		previousWorkStr = *member.PreviousWork
@@ -349,13 +261,7 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 		FirstName:                    member.FirstName,
 		LastName:                     member.LastName,
 		Title:                        member.Title,
-		LinkedinUrl:                  member.LinkedinUrl,
-		FacebookUrl:                  facebookUrlStr,
-		InstagramUrl:                 instagramUrlStr,
-		XUrl:                        xUrlStr,
-		BlueskyUrl:                  blueskyUrlStr,
-		DiscordUrl:                  discordUrlStr,
-		PersonalWebsite:              member.PersonalWebsite,
+		SocialLinks:                  socialLinks,
 		IsAccountOwner:               member.IsAccountOwner,
 		CommitmentType:               member.CommitmentType,
 		Introduction:                 member.Introduction,
@@ -401,43 +307,46 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
-	// Declare all string variables that will be used
-	var (
-		personalWebsiteStr string
-		previousWorkStr string
-		resumeExternalUrlStr string
-		resumeInternalUrlStr string
-		foundersAgreementExternalUrlStr string
-		foundersAgreementInternalUrlStr string
-		facebookUrlStr string
-		instagramUrlStr string
-		xUrlStr string
-		blueskyUrlStr string
-		discordUrlStr string
-	)
-
-	// Convert pointer values to strings, empty string if nil
-	if req.PersonalWebsite != nil {
-		personalWebsiteStr = *req.PersonalWebsite
-	}
-	if req.PreviousWork != nil {
-		previousWorkStr = *req.PreviousWork
-	}
-	if req.ResumeExternalUrl != nil {
-		resumeExternalUrlStr = *req.ResumeExternalUrl
-	}
-	if req.ResumeInternalUrl != nil {
-		resumeInternalUrlStr = *req.ResumeInternalUrl
-	}
-	if req.FoundersAgreementExternalUrl != nil {
-		foundersAgreementExternalUrlStr = *req.FoundersAgreementExternalUrl
-	}
-	if req.FoundersAgreementInternalUrl != nil {
-		foundersAgreementInternalUrlStr = *req.FoundersAgreementInternalUrl
+	// Process social links from the socialLinks array
+	socialLinksJSON, err := v1_common.ProcessSocialLinksRequest(req.SocialLinks)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid social links format", err)
 	}
 
 	// Update team member in database
 	queries := db.New(h.server.GetDB())
+	
+	// Convert pointer strings to regular strings for the update params
+	personalWebsiteStr := ""
+	if req.PersonalWebsite != nil {
+		personalWebsiteStr = *req.PersonalWebsite
+	}
+	
+	previousWorkStr := ""
+	if req.PreviousWork != nil {
+		previousWorkStr = *req.PreviousWork
+	}
+	
+	resumeExternalUrlStr := ""
+	if req.ResumeExternalUrl != nil {
+		resumeExternalUrlStr = *req.ResumeExternalUrl
+	}
+	
+	resumeInternalUrlStr := ""
+	if req.ResumeInternalUrl != nil {
+		resumeInternalUrlStr = *req.ResumeInternalUrl
+	}
+	
+	foundersAgreementExternalUrlStr := ""
+	if req.FoundersAgreementExternalUrl != nil {
+		foundersAgreementExternalUrlStr = *req.FoundersAgreementExternalUrl
+	}
+	
+	foundersAgreementInternalUrlStr := ""
+	if req.FoundersAgreementInternalUrl != nil {
+		foundersAgreementInternalUrlStr = *req.FoundersAgreementInternalUrl
+	}
+	
 	member, err := queries.UpdateTeamMember(c.Request().Context(), db.UpdateTeamMemberParams{
 		ID:          memberID,
 		CompanyID:   companyID,
@@ -446,11 +355,7 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		Title:       req.Title,
 		DetailedBiography: req.DetailedBiography,
 		LinkedinUrl: req.LinkedinUrl,
-		FacebookUrl: req.FacebookUrl,
-		InstagramUrl: req.InstagramUrl,
-		XUrl:       req.XUrl,
-		BlueskyUrl: req.BlueskyUrl,
-		DiscordUrl: req.DiscordUrl,
+		SocialLinks: socialLinksJSON,
 		PersonalWebsite: personalWebsiteStr,
 		CommitmentType: req.CommitmentType,
 		Introduction: req.Introduction,
@@ -468,36 +373,26 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update team member", err)
 	}
 
-	// Convert nil pointers to empty strings
-	if member.FacebookUrl != nil {
-		facebookUrlStr = *member.FacebookUrl
-	}
-	if member.InstagramUrl != nil {
-		instagramUrlStr = *member.InstagramUrl
-	}
-	if member.XUrl != nil {
-		xUrlStr = *member.XUrl
-	}
-	if member.BlueskyUrl != nil {
-		blueskyUrlStr = *member.BlueskyUrl
-	}
-	if member.DiscordUrl != nil {
-		discordUrlStr = *member.DiscordUrl
-	}
+	// Process social links
+	socialLinks := v1_common.ProcessSocialLinks(member)
 
-	// Convert other pointer fields to empty strings if nil
+	previousWorkStr = ""
 	if member.PreviousWork != nil {
 		previousWorkStr = *member.PreviousWork
 	}
+	resumeExternalUrlStr = ""
 	if member.ResumeExternalUrl != nil {
 		resumeExternalUrlStr = *member.ResumeExternalUrl
 	}
+	resumeInternalUrlStr = ""
 	if member.ResumeInternalUrl != nil {
 		resumeInternalUrlStr = *member.ResumeInternalUrl
 	}
+	foundersAgreementExternalUrlStr = ""
 	if member.FoundersAgreementExternalUrl != nil {
 		foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
 	}
+	foundersAgreementInternalUrlStr = ""
 	if member.FoundersAgreementInternalUrl != nil {
 		foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
 	}
@@ -508,13 +403,7 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		FirstName:                    member.FirstName,
 		LastName:                     member.LastName,
 		Title:                        member.Title,
-		LinkedinUrl:                  member.LinkedinUrl,
-		FacebookUrl:                  facebookUrlStr,
-		InstagramUrl:                 instagramUrlStr,
-		XUrl:                        xUrlStr,
-		BlueskyUrl:                  blueskyUrlStr,
-		DiscordUrl:                  discordUrlStr,
-		PersonalWebsite:              member.PersonalWebsite,
+		SocialLinks:                  socialLinks,
 		IsAccountOwner:               member.IsAccountOwner,
 		CommitmentType:               member.CommitmentType,
 		Introduction:                 member.Introduction,

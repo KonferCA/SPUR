@@ -45,7 +45,7 @@ func (h *Handler) handleUpdateUserDetails(c echo.Context) error {
 		LastName:  &req.LastName,
 		Title:     &req.Title,
 		Bio:       &req.Bio,
-		Linkedin:  &req.LinkedIn,
+		Linkedin:  nil,
 		ID:        userID,
 	})
 	if err != nil {
@@ -136,16 +136,15 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, UserDetailsResponse{
-		ID:        details.ID,
-		FirstName: details.FirstName,
-		LastName:  details.LastName,
-		Title:     details.Title,
-		Bio:       details.Bio,
-		LinkedIn:  details.Linkedin,
-    ProfilePictureUrl: details.ProfilePictureUrl,
-		Socials:   socials,
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
+		ID:               details.ID,
+		FirstName:        details.FirstName,
+		LastName:         details.LastName,
+		Title:            details.Title,
+		Bio:              details.Bio,
+		ProfilePictureUrl: details.ProfilePictureUrl,
+		Socials:          socials,
+		CreatedAt:        createdAt,
+		UpdatedAt:        updatedAt,
 	})
 }
 

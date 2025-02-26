@@ -18,19 +18,16 @@ interface TeamMemberResponse {
     first_name: string;
     last_name: string;
     title: string;
-    linkedin_url: string;
-    facebook_url: string;
-    instagram_url: string;
-    x_url: string;
-    bluesky_url: string;
-    discord_url: string;
-    personal_website: string | null;
+    social_links: Array<{
+        platform: string;
+        url_or_handle: string;
+    }>;
+    personal_website?: string | null;
     is_account_owner: boolean;
     commitment_type: string;
     introduction: string;
     industry_experience: string;
     detailed_biography: string;
-    bio: string;
     previous_work: string;
     resume_external_url: string;
     resume_internal_url: string;
@@ -43,6 +40,14 @@ interface TeamMemberResponse {
 export async function addTeamMember(accessToken: string, data: TeamMemberData) {
     const url = getApiUrl(`/companies/${data.companyId}/team`);
 
+    // Format social links for the API
+    const socialLinks = Array.isArray(data.member.socialLinks) 
+        ? data.member.socialLinks.map(link => ({
+            platform: link.platform,
+            url_or_handle: link.urlOrHandle
+          }))
+        : [];
+
     const res = await fetch(url, {
         method: 'POST',
         headers: {
@@ -54,13 +59,7 @@ export async function addTeamMember(accessToken: string, data: TeamMemberData) {
             last_name: data.member.lastName,
             title: data.member.title,
             detailed_biography: data.member.detailedBiography,
-            linkedin_url: data.member.linkedinUrl,
-            facebook_url: data.member.facebookUrl,
-            instagram_url: data.member.instagramUrl,
-            x_url: data.member.xUrl,
-            bluesky_url: data.member.blueskyUrl,
-            discord_url: data.member.discordUrl,
-            personal_website: data.member.personalWebsite || null,
+            social_links: socialLinks,
             is_account_owner: data.member.isAccountOwner,
             commitment_type: data.member.commitmentType,
             introduction: data.member.introduction,
@@ -129,19 +128,20 @@ export async function getTeamMembers(
     const teamMembers = json.team_members || [] as TeamMemberResponse[];
     return teamMembers.map((member: TeamMemberResponse) => {
 
+        // Transform social_links to match the expected SocialLink format with proper id field
+        const socialLinks = (member.social_links || []).map(link => ({
+            id: Math.random().toString(36).substring(2, 9), // Generate a random ID for each link
+            platform: link.platform,
+            urlOrHandle: link.url_or_handle
+        }));
+
         const mappedMember = {
             id: member.id,
             firstName: member.first_name,
             lastName: member.last_name,
             title: member.title,
-            detailedBiography: member.detailed_biography || member.bio || '',
-            linkedinUrl: member.linkedin_url || '',
-            facebookUrl: member.facebook_url || '',
-            instagramUrl: member.instagram_url || '',
-            xUrl: member.x_url || '',
-            blueskyUrl: member.bluesky_url || '',
-            discordUrl: member.discord_url || '',
-            personalWebsite: member.personal_website || '',
+            detailedBiography: member.detailed_biography || '',
+            socialLinks: socialLinks,
             resumeExternalUrl: member.resume_external_url || '',
             resumeInternalUrl: member.resume_internal_url || '',
             commitmentType: member.commitment_type || '',
@@ -204,29 +204,42 @@ export async function uploadTeamMemberDocument(
 export async function updateTeamMember(accessToken: string, data: TeamMemberData) {
     const url = getApiUrl(`/companies/${data.companyId}/team/${data.member.id}`);
 
+    console.log('Sending team member update with social links:', data.member.socialLinks);
+    
+    let socialLinksValue;
+    if (Array.isArray(data.member.socialLinks) && data.member.socialLinks.length === 0) {
+        socialLinksValue = null;
+        console.log('Sending null for social_links to force backend to clear all links');
+    } else {
+        socialLinksValue = Array.isArray(data.member.socialLinks) 
+            ? data.member.socialLinks.map(link => ({
+                platform: link.platform,
+                url_or_handle: link.urlOrHandle
+              }))
+            : [];
+    }
+        
+    const requestBody = {
+        first_name: data.member.firstName,
+        last_name: data.member.lastName,
+        title: data.member.title,
+        detailed_biography: data.member.detailedBiography,
+        social_links: socialLinksValue,
+        commitment_type: data.member.commitmentType,
+        introduction: data.member.introduction,
+        industry_experience: data.member.industryExperience,
+        previous_work: data.member.previousWork,
+    };
+    
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
     const res = await fetch(url, {
         method: 'PUT',
         headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            first_name: data.member.firstName,
-            last_name: data.member.lastName,
-            title: data.member.title,
-            detailed_biography: data.member.detailedBiography,
-            linkedin_url: data.member.linkedinUrl,
-            facebook_url: data.member.facebookUrl,
-            instagram_url: data.member.instagramUrl,
-            x_url: data.member.xUrl,
-            bluesky_url: data.member.blueskyUrl,
-            discord_url: data.member.discordUrl,
-            personal_website: data.member.personalWebsite || null,
-            commitment_type: data.member.commitmentType,
-            introduction: data.member.introduction,
-            industry_experience: data.member.industryExperience,
-            previous_work: data.member.previousWork,
-        }),
+        body: JSON.stringify(requestBody),
     });
 
     const json = await res.json();
