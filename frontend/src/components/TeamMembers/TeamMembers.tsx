@@ -18,6 +18,7 @@ import {
 } from '@/services/teams';
 import { useAuth, useNotification } from '@/contexts';
 import { getUserProfile } from '@/services/user';
+import { randomId } from '@/utils/random';
 
 export interface TeamMembersProps {
     initialValue: TeamMember[];
@@ -215,7 +216,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     const handleAdd = () => {
         if (checkAllRequired()) {
             const member: LocalTeamMember = {
-                id: Math.random().toString(36).substring(2, 9),
+                id: randomId(),
                 firstName: newMember.firstName!,
                 lastName: newMember.lastName!,
                 title: newMember.title!,
@@ -295,7 +296,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         // Ensure each link has a unique ID
         const links = (member.socialLinks || []).map(link => ({
             ...link,
-            id: link.id || Math.random().toString(36).substring(2, 9)
+            id: link.id || randomId()
         }));
         
         console.log('Initialized social links for editing:', links);
@@ -418,6 +419,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         {/* Edit button */}
                         {!member.isLoading && !disabled && !member.isAccountOwner && (
                             <button
+                                type="button"
                                 onClick={() => handleStartEdit(member)}
                                 className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-600"
                             >
@@ -448,6 +450,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 {/* Member Button */}
                 {!disabled && !isAdding && (
                     <button
+                        type="button"
                         onClick={() => {
                             setSocialLinks([]);
                             setNewMember({});
@@ -551,6 +554,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 secondaryActionText="Cancel"
                 additionalButtons={
                     <button
+                        type="button"
                         onClick={() => {
                             if (editingMember) {
                                 handleRemove(editingMember);

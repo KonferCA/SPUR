@@ -1,6 +1,7 @@
 import { TeamMember } from '@/types';
 import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
+import { randomId } from '@/utils/random';
 import { ApiError } from './errors';
 
 export interface TeamMemberData {
@@ -130,7 +131,7 @@ export async function getTeamMembers(
 
         // Transform social_links to match the expected SocialLink format with proper id field
         const socialLinks = (member.social_links || []).map(link => ({
-            id: Math.random().toString(36).substring(2, 9), // Generate a random ID for each link
+            id: randomId(),
             platform: link.platform,
             urlOrHandle: link.url_or_handle
         }));
