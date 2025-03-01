@@ -272,7 +272,7 @@ function RouteComponent() {
                                     </div>
                                 </CollapsibleSection>
                             </div>
-                        ))};
+                        ))}
 
                         <div className="pb-32 flex gap-8">
                             <Button
