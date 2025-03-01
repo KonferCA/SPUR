@@ -18,7 +18,6 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	))
 	// projects := g.Group("/project")
 
-	// Add the /projects endpoint for listing projects
 	g.GET("/projects", h.handleGetProjects, middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
 
 	g.GET("/project/list/all", h.handleListAllProjects, middleware.Auth(s.GetDB(), permissions.PermAdmin))

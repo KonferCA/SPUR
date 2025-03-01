@@ -50,7 +50,6 @@ func ProcessSocialLinksRequest(socialLinks []SocialLink) ([]byte, error) {
 			continue
 		}
 
-		// Add the sanitized link to our validated list
 		validatedLinks = append(validatedLinks, SocialLink{
 			Platform:    link.Platform,
 			UrlOrHandle: sanitizedUrl,

@@ -195,35 +195,43 @@ export async function uploadTeamMemberDocument(
 
 export async function updateTeamMember(
     accessToken: string,
-    companyId: string,
-    memberId: string,
-    data: Partial<TeamMember>
+    params: {
+        companyId: string;
+        member: Partial<TeamMember>;
+    }
 ) {
+    const { companyId, member } = params;
+    const memberId = member.id;
+    
+    if (!memberId) {
+        throw new Error('Member ID is required for update');
+    }
+
     const url = getApiUrl(`/companies/${companyId}/team/${memberId}`);
 
     // Format social links using our shared utility
-    const socialLinks = data.socialLinks 
-        ? processSocialLinksForApi(data.socialLinks)
+    const socialLinks = member.socialLinks 
+        ? processSocialLinksForApi(member.socialLinks)
         : undefined;
 
     const body: Record<string, any> = {};
-    if (data.firstName !== undefined) body.first_name = data.firstName;
-    if (data.lastName !== undefined) body.last_name = data.lastName;
-    if (data.title !== undefined) body.title = data.title;
-    if (data.detailedBiography !== undefined) body.detailed_biography = data.detailedBiography;
-    if (data.isAccountOwner !== undefined) body.is_account_owner = data.isAccountOwner;
-    if (data.commitmentType !== undefined) body.commitment_type = data.commitmentType;
-    if (data.introduction !== undefined) body.introduction = data.introduction;
-    if (data.industryExperience !== undefined) body.industry_experience = data.industryExperience;
-    if (data.previousWork !== undefined) body.previous_work = data.previousWork;
-    if (data.resumeExternalUrl !== undefined) body.resume_external_url = data.resumeExternalUrl;
-    if (data.resumeInternalUrl !== undefined) body.resume_internal_url = data.resumeInternalUrl;
-    if (data.founderAgreementExternalUrl !== undefined) body.founders_agreement_external_url = data.founderAgreementExternalUrl;
-    if (data.founderAgreementInternalUrl !== undefined) body.founders_agreement_internal_url = data.founderAgreementInternalUrl;
+    if (member.firstName !== undefined) body.first_name = member.firstName;
+    if (member.lastName !== undefined) body.last_name = member.lastName;
+    if (member.title !== undefined) body.title = member.title;
+    if (member.detailedBiography !== undefined) body.detailed_biography = member.detailedBiography;
+    if (member.isAccountOwner !== undefined) body.is_account_owner = member.isAccountOwner;
+    if (member.commitmentType !== undefined) body.commitment_type = member.commitmentType;
+    if (member.introduction !== undefined) body.introduction = member.introduction;
+    if (member.industryExperience !== undefined) body.industry_experience = member.industryExperience;
+    if (member.previousWork !== undefined) body.previous_work = member.previousWork;
+    if (member.resumeExternalUrl !== undefined) body.resume_external_url = member.resumeExternalUrl;
+    if (member.resumeInternalUrl !== undefined) body.resume_internal_url = member.resumeInternalUrl;
+    if (member.founderAgreementExternalUrl !== undefined) body.founders_agreement_external_url = member.founderAgreementExternalUrl;
+    if (member.founderAgreementInternalUrl !== undefined) body.founders_agreement_internal_url = member.founderAgreementInternalUrl;
     if (socialLinks !== undefined) body.social_links = socialLinks;
 
     const res = await fetch(url, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
