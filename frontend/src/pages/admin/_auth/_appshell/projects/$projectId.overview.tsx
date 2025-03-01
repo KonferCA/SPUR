@@ -214,7 +214,7 @@ function RouteComponent() {
         ])
 
         setCompany(companyData)
-        setTeamMembers(teamData)
+        setTeamMembers(teamData.teamMembers)
 
         // Set project stats
         setProjectStats({
@@ -253,16 +253,17 @@ function RouteComponent() {
         })
 
         // Add team members joined events
-        if (teamData.length > 0) {
+        const members = teamData.teamMembers;
+        if (members.length > 0) {
           // Sort team members by creation date
-          const sortedTeam = [...teamData].sort((a, b) => b.created_at - a.created_at)
+          const sortedTeam = [...members].sort((a, b) => b.created_at - a.created_at)
           history.push({
             date: new Date(sortedTeam[0].created_at * 1000).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'
             }),
-            title: `${teamData.length} Team Member${teamData.length === 1 ? '' : 's'} Added`,
+            title: `${members.length} Team Member${members.length === 1 ? '' : 's'} Added`,
             icon: <FiMessageSquare className="w-5 h-5 text-gray-900" />
           })
         }
