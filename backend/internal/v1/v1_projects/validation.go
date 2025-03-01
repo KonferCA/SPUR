@@ -39,11 +39,6 @@ type validationType struct {
 var validationTypes = map[string]validationType{
 	"url": {
 		Validate: func(answer string, _ string) bool {
-			// Special case for tests
-			if answer == "https://example.com" {
-				return true
-			}
-
 			// require http:// or https:// prefix for proper URL validation
 			if !strings.HasPrefix(strings.ToLower(answer), "http://") &&
 				!strings.HasPrefix(strings.ToLower(answer), "https://") {

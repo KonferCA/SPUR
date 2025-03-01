@@ -435,11 +435,6 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 				if question.Validations != nil {
 					// Special case for "What is the unique value proposition?" to provide more helpful error
 					if question.Question == "What is the unique value proposition?" {
-						// Special case for test strings
-						if strings.Contains(answer, "Our product is a revolutionary blockchain-based authentication system") {
-							continue // Skip validation for test case
-						}
-
 						if len(answer) < 50 {
 							validationErrors = append(validationErrors, ValidationError{
 								Question: question.Question,

@@ -20,6 +20,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// test constants for project validation
+const (
+	testCompanyWebsite       = "https://example-company.com"
+	testValuePropositionText = "Our product provides a unique solution that addresses critical needs in the market. It offers unprecedented performance, reliability, and cost-effectiveness compared to existing alternatives. The proprietary technology enables seamless integration with existing systems."
+	testCoreProductText      = "Our core service is a comprehensive platform that solves multiple pain points for enterprise customers. The solution integrates with existing workflows while providing enhanced security, analytics, and collaboration features. It significantly reduces operational overhead and improves productivity across organizations."
+)
+
 func seedTestProjectQuestions(pool *pgxpool.Pool) (ids []string, err error) {
 	var id string
 	ctx := context.Background()
@@ -269,13 +276,13 @@ func TestProjectEndpoints(t *testing.T) {
 			var answer string
 			switch q.Question {
 			case "Company website":
-				answer = "https://example.com"
+				answer = testCompanyWebsite
 				t.Logf("Setting company website to: %s", answer)
 			case "What is the core product or service, and what problem does it solve?":
-				answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations."
+				answer = testCoreProductText
 				t.Logf("Setting core product answer length: %d", len(answer))
 			case "What is the unique value proposition?":
-				answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations."
+				answer = testValuePropositionText
 				t.Logf("Setting value proposition answer length: %d", len(answer))
 			default:
 				t.Logf("Skipping question: %s", q.Question)
