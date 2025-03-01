@@ -272,7 +272,7 @@ func (q *Queries) DeleteProjectDocument(ctx context.Context, arg DeleteProjectDo
 }
 
 const getCompanyByUserID = `-- name: GetCompanyByUserID :one
-SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies 
+SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at, group_type FROM companies 
 WHERE owner_id = $1 
 LIMIT 1
 `
@@ -292,6 +292,7 @@ func (q *Queries) GetCompanyByUserID(ctx context.Context, ownerID string) (Compa
 		&i.LinkedinUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroupType,
 	)
 	return i, err
 }

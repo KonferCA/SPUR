@@ -759,11 +759,11 @@ function ProjectFormPage() {
                                                         }
                                                     />
                                                 ) : null,
-                                            )};
+                                            )}
                                         </div>
                                     </CollapsibleSection>
                                 </div>
-                            ))};
+                            ))}
 
                             <div className="pb-32 flex gap-8">
                                 <Button
