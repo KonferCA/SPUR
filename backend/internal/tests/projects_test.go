@@ -549,9 +549,7 @@ func TestProjectEndpoints(t *testing.T) {
 		rec := httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
 
-		if !assert.Equal(t, http.StatusCreated, rec.Code) {
-			t.FailNow()
-		}
+		assert.Equal(t, http.StatusCreated, rec.Code)
 
 		var commentResp map[string]interface{}
 		err = json.NewDecoder(rec.Body).Decode(&commentResp)

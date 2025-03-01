@@ -1,5 +1,11 @@
 package v1_projects
 
+/*
+ * package v1_projects implements project answer management functionality.
+ * this file provides handlers for creating, updating, and managing project question answers,
+ * including validation and draft management for project submissions.
+ */
+
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/middleware"
@@ -7,30 +13,25 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 )
 
 /*
- * package v1_projects implements project answer management endpoints.
- * this file handles saving, updating, and validating project answers.
- */
-
-/*
  * handleSaveProjectDraft updates a batch of answers for a project.
- * these answers must be of type string or array of string.
+ * it handles both text answers and multiple-choice answers.
  *
- * parameters:
- * - project id from url param
- * - draft request body with array of answers
+ * input:
+ * - project id (from url parameter)
+ * - array of draft answers in request body
+ *
+ * processing:
+ * - validates project ownership
+ * - accepts both string and array answer types
+ * - batches all updates into a single database operation
  *
  * security:
  * - verifies project belongs to user's company
- *
- * returns:
- * - 200 ok on success
- * - appropriate error responses for invalid requests
  */
 func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
 	logger := middleware.GetLogger(c)
@@ -90,9 +91,14 @@ func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
 /*
  * handlePatchProjectAnswer updates an answer for a project question.
  *
- * parameters:
- * - project id from url param
- * - request body with answer id and content
+ * input:
+ * - project id (from url parameter)
+ * - answer id and content in request body
+ *
+ * processing:
+ * - verifies project ownership
+ * - validates answer content against question rules
+ * - updates the answer in the database
  *
  * validation:
  * - validates answer content against question rules
@@ -100,10 +106,6 @@ func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
  *
  * security:
  * - verifies project belongs to user's company
- *
- * returns:
- * - 200 ok with success message on successful update
- * - appropriate error responses for validation failures
  */
 func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	// Validate static parameters first
@@ -115,7 +117,7 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	// Parse and validate request body
 	var req PatchAnswerRequest
 	if err := c.Bind(&req); err != nil {
-		return v1_common.Fail(c, 400, "Invalid request body", err)
+		return v1_common.Fail(c, http.StatusUnauthorized, "Invalid request body", err)
 	}
 
 	// Get authenticated user
@@ -124,33 +126,52 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
-	q := h.server.GetQueries()
-
-	// Check company
-	company, err := q.GetCompanyByOwnerID(c.Request().Context(), user.ID)
+	// Get the question for this answer to check validations
+	question, err := h.server.GetQueries().GetQuestionByAnswerID(c.Request().Context(), req.AnswerID)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusNotFound, "Company not found", err)
+		return v1_common.Fail(c, 404, "Question not found", err)
 	}
 
-	// Verify project belongs to user's company
-	project, err := q.GetProjectByID(c.Request().Context(), projectID)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
+	// Validate the answer content
+	if question.Validations != nil {
+		if !isValidAnswer(req.Content, question.Validations) {
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"validation_errors": []ValidationError{
+					{
+						Question: question.Question,
+						Message:  getValidationMessage(question.Validations),
+					},
+				},
+			})
+		}
 	}
 
-	if project.CompanyID != company.ID {
-		return v1_common.Fail(c, http.StatusForbidden, "Project does not belong to your company", nil)
+	// Get company owned by user
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+	if err != nil {
+		return v1_common.Fail(c, 404, "Company not found", err)
+	}
+
+	// Get project and verify status
+	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+		ID:        projectID,
+		CompanyID: company.ID,
+	})
+	if err != nil {
+		return v1_common.Fail(c, 404, "Project not found", err)
+	}
+
+	// Only allow updates if project is in draft status
+	if project.Status != db.ProjectStatusDraft {
+		return v1_common.Fail(c, 400, "Project answers can only be updated while in draft status", nil)
 	}
 
 	// Update the answer
-	logger := middleware.GetLogger(c)
-
-	result, err := q.UpdateProjectAnswer(c.Request().Context(), db.UpdateProjectAnswerParams{
+	_, err = h.server.GetQueries().UpdateProjectAnswer(c.Request().Context(), db.UpdateProjectAnswerParams{
 		Answer:    req.Content,
 		ID:        req.AnswerID,
 		ProjectID: projectID,
 	})
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return v1_common.Fail(c, 404, "Answer not found", err)
@@ -164,17 +185,20 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 }
 
 /*
- * handleGetProjectAnswers returns all answers for a project.
+ * handleGetProjectAnswers retrieves all answers for a project.
  *
- * parameters:
- * - project id from url param
+ * input:
+ * - project id (from url parameter)
+ *
+ * processing:
+ * - verifies project ownership
+ * - retrieves all answers from the database
+ *
+ * response:
+ * - returns array of answers with question details
  *
  * security:
- * - verifies user has access to project
- *
- * returns:
- * - array of project answers with question details
- * - empty array if no answers found
+ * - verifies project belongs to user's company
  */
 func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
 	user, err := getUserFromContext(c)
@@ -226,65 +250,4 @@ func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
 	})
 }
 
-/*
- * handleCreateAnswer creates a new answer for a project question.
- *
- * parameters:
- * - project id from url param
- * - request body with question id and answer content
- *
- * validation:
- * - checks if question exists
- * - validates answer against question rules
- *
- * returns:
- * - 200 ok with new answer data on success
- * - validation errors if answer doesn't meet requirements
- */
-func (h *Handler) handleCreateAnswer(c echo.Context) error {
-	var req CreateAnswerRequest
-
-	if err := v1_common.BindandValidate(c, &req); err != nil {
-		if strings.Contains(err.Error(), "required") {
-			return v1_common.Fail(c, http.StatusBadRequest, "Question ID is required", err)
-		}
-		return v1_common.Fail(c, http.StatusNotFound, "Question not found", err)
-	}
-
-	// Get project ID from URL
-	projectID := c.Param("id")
-	if projectID == "" {
-		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
-	}
-
-	// Verify question exists and validate answer
-	question, err := h.server.GetQueries().GetProjectQuestion(c.Request().Context(), req.QuestionID)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusNotFound, "Question not found", err)
-	}
-
-	if question.Validations != nil {
-		if !isValidAnswer(req.Content, question.Validations) {
-			return c.JSON(http.StatusBadRequest, map[string]interface{}{
-				"validation_errors": []ValidationError{
-					{
-						Question: question.Question,
-						Message:  getValidationMessage(question.Validations),
-					},
-				},
-			})
-		}
-	}
-
-	// Create the answer
-	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
-		ProjectID:  projectID,
-		QuestionID: req.QuestionID,
-		Answer:     req.Content,
-	})
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)
-	}
-
-	return c.JSON(http.StatusOK, answer)
-}
+// note: handleCreateAnswer is implemented in projects.go

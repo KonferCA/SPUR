@@ -1,5 +1,11 @@
 package v1_projects
 
+/*
+ * package v1_projects implements the project management endpoints for the spur api.
+ * this file contains core project operations including creation, retrieval,
+ * updating, submission, and status management.
+ */
+
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
@@ -14,11 +20,15 @@ import (
 )
 
 /*
- * Package v1_projects implements the project management endpoints for the SPUR API.
- * It handles project creation, retrieval, document management, and submission workflows.
+ * getUserFromContext extracts the authenticated user from the echo context.
+ *
+ * parameters:
+ * - c: echo context containing the authenticated user
+ *
+ * returns:
+ * - user: the authenticated user object
+ * - error: if user not found or invalid type
  */
-
-// Helper function to get validated user from context
 func getUserFromContext(c echo.Context) (*db.User, error) {
 	userVal := c.Get("user")
 	if userVal == nil {
@@ -33,6 +43,20 @@ func getUserFromContext(c echo.Context) (*db.User, error) {
 	return user, nil
 }
 
+/*
+ * handleCreateProject creates a new project for a company.
+ *
+ * processing:
+ * - verifies user has permission to create projects
+ * - gets the company associated with the user
+ * - creates a new project with draft status
+ *
+ * response:
+ * - returns the created project details
+ *
+ * security:
+ * - requires permission: permissions.PermSubmitProject
+ */
 func (h *Handler) handleCreateProject(c echo.Context) error {
 	user, err := getUserFromContext(c)
 	if err != nil {
@@ -88,11 +112,17 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 /*
  * handleGetProjects retrieves all projects for a company.
  *
- * Security:
- * - Requires authenticated user
- * - Only returns projects for user's company
+ * processing:
+ * - authenticates the user
+ * - determines user permissions and filters projects accordingly
+ * - retrieves projects based on user role (admin vs regular user)
  *
- * Returns array of ProjectResponse with basic project details
+ * response:
+ * - returns array of projects with basic details
+ *
+ * security:
+ * - requires authenticated user
+ * - filters results based on user permissions
  */
 func (h *Handler) handleGetProjects(c echo.Context) error {
 	user, err := getUserFromContext(c)
@@ -134,11 +164,23 @@ func (h *Handler) handleGetProjects(c echo.Context) error {
 }
 
 /*
- * handleGetProject retrieves a single project by ID.
+ * handleGetProject retrieves detailed information for a single project.
  *
- * Security:
- * - Verifies project belongs to user's company
- * - Returns 404 if project not found or unauthorized
+ * input:
+ * - project id (from url parameter)
+ *
+ * processing:
+ * - verifies user has permission to access the project
+ * - retrieves project details including metadata and associated entities
+ * - formats data for client consumption
+ *
+ * response:
+ * - returns comprehensive project details
+ * - includes status, title, description, timestamps, and related items
+ *
+ * security:
+ * - filters based on user permissions (admin vs company owner)
+ * - ensures user can only access authorized projects
  */
 func (h *Handler) handleGetProject(c echo.Context) error {
 	user, err := getUserFromContext(c)
@@ -484,6 +526,73 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		"message": "Project submitted successfully",
 		"status":  "pending",
 	})
+}
+
+/*
+ * handleCreateAnswer creates a new answer for a project question.
+ *
+ * input:
+ * - project id (from url parameter)
+ * - question id and content in request body
+ *
+ * processing:
+ * - verifies project ownership
+ * - validates answer content against question rules
+ * - creates the answer in the database
+ *
+ * validation:
+ * - validates answer content against question rules
+ * - returns validation errors if content invalid
+ *
+ * security:
+ * - verifies project belongs to user's company
+ */
+func (h *Handler) handleCreateAnswer(c echo.Context) error {
+	var req CreateAnswerRequest
+
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		if strings.Contains(err.Error(), "required") {
+			return v1_common.Fail(c, http.StatusBadRequest, "Question ID is required", err)
+		}
+		return v1_common.Fail(c, http.StatusNotFound, "Question not found", err)
+	}
+
+	// Get project ID from URL
+	projectID := c.Param("id")
+	if projectID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
+	}
+
+	// Verify question exists and validate answer
+	question, err := h.server.GetQueries().GetProjectQuestion(c.Request().Context(), req.QuestionID)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusNotFound, "Question not found", err)
+	}
+
+	if question.Validations != nil {
+		if !isValidAnswer(req.Content, question.Validations) {
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"validation_errors": []ValidationError{
+					{
+						Question: question.Question,
+						Message:  getValidationMessage(question.Validations),
+					},
+				},
+			})
+		}
+	}
+
+	// Create the answer
+	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
+		ProjectID:  projectID,
+		QuestionID: req.QuestionID,
+		Answer:     req.Content,
+	})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)
+	}
+
+	return c.JSON(http.StatusOK, answer)
 }
 
 func (h *Handler) handleUpdateProjectStatus(c echo.Context) error {
