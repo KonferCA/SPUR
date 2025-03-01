@@ -526,34 +526,46 @@ func TestProjectEndpoints(t *testing.T) {
 		assert.True(t, ok, "Response should contain comment ID")
 		assert.NotEmpty(t, commentID, "Comment ID should not be empty")
 
-		// Test resolving the comment
-		req = httptest.NewRequest(http.MethodPost,
-			fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
-			nil)
-		req.Header.Set("Authorization", "Bearer "+adminToken)
-		rec = httptest.NewRecorder()
-		s.GetEcho().ServeHTTP(rec, req)
+		// Table-driven tests for comment resolution actions
+		tests := []struct {
+			name         string
+			method       string
+			path         string
+			token        string
+			expectedCode int
+		}{
+			{
+				name:         "Admin Can Resolve Comment",
+				method:       http.MethodPost,
+				path:         fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
+				token:        adminToken,
+				expectedCode: http.StatusOK,
+			},
+			{
+				name:         "Admin Can Unresolve Comment",
+				method:       http.MethodPost,
+				path:         fmt.Sprintf("/api/v1/project/%s/comments/%s/unresolve", projectID, commentID),
+				token:        adminToken,
+				expectedCode: http.StatusOK,
+			},
+			{
+				name:         "Non-Admin Cannot Resolve Comment",
+				method:       http.MethodPost,
+				path:         fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
+				token:        accessToken,
+				expectedCode: http.StatusForbidden,
+			},
+		}
 
-		assert.Equal(t, http.StatusOK, rec.Code)
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				req := httptest.NewRequest(tc.method, tc.path, nil)
+				req.Header.Set("Authorization", "Bearer "+tc.token)
+				rec := httptest.NewRecorder()
+				s.GetEcho().ServeHTTP(rec, req)
 
-		// Test unresolving the comment
-		req = httptest.NewRequest(http.MethodPost,
-			fmt.Sprintf("/api/v1/project/%s/comments/%s/unresolve", projectID, commentID),
-			nil)
-		req.Header.Set("Authorization", "Bearer "+adminToken)
-		rec = httptest.NewRecorder()
-		s.GetEcho().ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusOK, rec.Code)
-
-		// Test non-admin cannot resolve/unresolve
-		req = httptest.NewRequest(http.MethodPost,
-			fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
-			nil)
-		req.Header.Set("Authorization", "Bearer "+accessToken)
-		rec = httptest.NewRecorder()
-		s.GetEcho().ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusForbidden, rec.Code)
+				assert.Equal(t, tc.expectedCode, rec.Code)
+			})
+		}
 	})
 }
