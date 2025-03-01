@@ -270,7 +270,7 @@ func TestProjectEndpoints(t *testing.T) {
 			switch q.Question {
 			case "Company website":
 				answer = "https://example.com"
-				t.Logf("Setting company website to: %s (exactly matching special case)", answer)
+				t.Logf("Setting company website to: %s", answer)
 			case "What is the core product or service, and what problem does it solve?":
 				answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations."
 				t.Logf("Setting core product answer length: %d", len(answer))

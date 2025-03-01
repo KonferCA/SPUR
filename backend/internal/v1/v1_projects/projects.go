@@ -341,17 +341,10 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get project questions", err)
 	}
 
-	fmt.Println("DEBUG: Found", len(questions), "questions for validation")
-	for i, q := range questions {
-		fmt.Printf("DEBUG: Question %d - ID: %s, Question: %s, Answer: '%s', Required: %v, Validations: %v\n", i, q.ID, q.Question, q.Answer, q.Required, q.Validations)
-	}
-
 	var validationErrors []ValidationError
 
 	// Validate each question
 	for i, question := range questions {
-		fmt.Printf("DEBUG: Before validation - Question %d - ID: %s, Question: %s, Answer: '%s'\n", i, question.ID, question.Question, question.Answer)
-
 		// First two questions are the company name and date founded which are never filled
 		// by the user since they can't change through project form.
 		// only override if no answer exists already
@@ -365,8 +358,6 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 				question.Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
 			}
 		}
-
-		fmt.Printf("DEBUG: After potential override - Question %d - ID: %s, Question: %s, Answer: '%s'\n", i, question.ID, question.Question, question.Answer)
 
 		// Check if required question is answered
 		if question.Required {
