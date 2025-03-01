@@ -1,4 +1,4 @@
-import React, { ComponentProps, ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -8,11 +8,9 @@ vi.mock('@headlessui/react', () => {
     const Fragment = React.Fragment;
     
     // Simple mock components that implement the minimal functionality needed for tests
-    const DialogMock = ({ children, as, className, onClose }: { 
+    const DialogMock = ({ children, className }: { 
         children: ReactNode; 
-        as?: any; 
         className?: string; 
-        onClose?: () => void;
     }) => {
         return <div className={className}>{children}</div>;
     };
@@ -30,21 +28,13 @@ vi.mock('@headlessui/react', () => {
         children: ReactNode; 
         show?: boolean;
         appear?: boolean;
-        as?: any;
     }) => {
         if (!show) return null;
         return <>{children}</>;
     };
     
-    TransitionMock.Child = ({ children, as, enter, enterFrom, enterTo, leave, leaveFrom, leaveTo }: { 
+    TransitionMock.Child = ({ children }: { 
         children: ReactNode;
-        as?: any;
-        enter?: string;
-        enterFrom?: string;
-        enterTo?: string;
-        leave?: string;
-        leaveFrom?: string;
-        leaveTo?: string;
     }) => {
         return <>{children}</>;
     };

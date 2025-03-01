@@ -4,7 +4,6 @@ import { FiX } from 'react-icons/fi';
 import { TextInput, TextArea } from '@components';
 import { SocialLinks } from '@/components/SocialLinks';
 import type { SocialLink } from '@/types';
-import { SocialPlatform } from '@/types/auth';
 
 export interface TeamMemberFormData {
     first_name: string;
@@ -41,15 +40,6 @@ interface FormErrors {
     introduction?: string;
     industry_experience?: string;
 }
-
-const validateUrl = (url: string): boolean => {
-    try {
-        const parsedUrl = new URL(url);
-        return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
-    } catch {
-        return false;
-    }
-};
 
 export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
     isOpen,

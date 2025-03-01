@@ -60,6 +60,7 @@ export interface TeamMember {
     founderAgreementExternalUrl?: string;
     founderAgreementInternalUrl?: string;
     isAccountOwner: boolean;
+    linkedinUrl?: string;
     created_at: number;
     updated_at?: number;
 }
