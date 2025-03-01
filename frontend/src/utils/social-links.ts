@@ -83,8 +83,13 @@ export function validateSocialLink(
  * removes html tags, script tags, and other potentially harmful content
  */
 export function sanitizeSocialInput(input: string): string {
-  // remove html tags
-  let sanitized = input.replace(/<[^>]*>/g, '');
+  // iteratively remove html tags until no more are found
+  let previous;
+  let sanitized = input;
+  do {
+    previous = sanitized;
+    sanitized = sanitized.replace(/<[^>]*>/g, '');
+  } while (sanitized !== previous);
   
   // prevent javascript protocol or other script injection
   if (/^\s*javascript:/i.test(sanitized)) {
