@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -16,6 +17,9 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 		permissions.PermViewAllProjects,
 	))
 	// projects := g.Group("/project")
+
+	// Add the /projects endpoint for listing projects
+	g.GET("/projects", h.handleGetProjects, middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
 
 	g.GET("/project/list/all", h.handleListAllProjects, middleware.Auth(s.GetDB(), permissions.PermAdmin))
 	// Update project status

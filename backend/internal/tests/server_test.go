@@ -78,11 +78,11 @@ func TestServer(t *testing.T) {
 			_, err = s.DBPool.Exec(ctx, `
 				INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
 				VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
-			`, userID, email, string(hashedPassword), 
+			`, userID, email, string(hashedPassword),
 				int32(permissions.PermSubmitProject|permissions.PermManageTeam), true)
 			assert.NoError(t, err)
 
-			var user db.GetUserByIDRow
+			var user db.User
 			err = s.DBPool.QueryRow(ctx, "SELECT id, email, permissions, email_verified, token_salt FROM users WHERE id = $1", userID).Scan(
 				&user.ID,
 				&user.Email,
@@ -139,7 +139,7 @@ func TestServer(t *testing.T) {
 			reader := bytes.NewReader(reqBodyBytes)
 			req := httptest.NewRequest(http.MethodPost, url, reader)
 			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
-			
+
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
@@ -181,7 +181,7 @@ func TestServer(t *testing.T) {
 			assert.NotNil(t, refreshCookie, "Refresh token cookie should be set.")
 			if refreshCookie != nil {
 				assert.True(t, refreshCookie.HttpOnly, "Cookie should be HTTP-only")
-				assert.Equal(t, "/api/v1/auth/verify", refreshCookie.Path, "Cookie path should be /api")
+				assert.Equal(t, "/api/v1/", refreshCookie.Path, "Cookie path should be /api/v1/")
 				assert.NotEmpty(t, refreshCookie.Value, "Cookie should have refresh token string as value")
 				// make sure the cookie value holds a valid refresh token
 				claims, err := jwt.VerifyTokenWithSalt(refreshCookie.Value, salt)
@@ -255,7 +255,7 @@ func TestServer(t *testing.T) {
 
 			// now we send a request to the actual route being tested
 			// to see if the verification of the cookie works
-			req = httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify", nil)
 			req.AddCookie(refreshCookie)
 			rec = httptest.NewRecorder()
 
@@ -337,7 +337,7 @@ func TestServer(t *testing.T) {
 				Value: signed,
 			}
 
-			req = httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify", nil)
 			req.AddCookie(&cookie)
 			rec = httptest.NewRecorder()
 			s.Echo.ServeHTTP(rec, req)
@@ -369,7 +369,7 @@ func TestServer(t *testing.T) {
 		})
 
 		t.Run("/api/v1/auth/verify - 401 UNAUTHORIZED - missing cookie in request", func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify", nil)
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
@@ -377,24 +377,14 @@ func TestServer(t *testing.T) {
 		})
 
 		t.Run("/api/v1/auth/verify - 401 UNAUTHORIZED - invalid cookie value", func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			defer cancel()
-
-			// create new user to generate jwt
-			userID, email, _, err := createTestUser(ctx, s, permissions.PermStartupOwner)
-			require.NoError(t, err)
-			defer removeTestUser(ctx, email, s)
-
-			// the refresh token will be invalid since the salt is different
-			_, refreshToken, err := jwt.GenerateWithSalt(userID, []byte{0, 1, 2})
-			assert.NoError(t, err)
-
-			cookie := http.Cookie{
+			// create a cookie with invalid value
+			cookie := &http.Cookie{
 				Name:  v1_auth.COOKIE_REFRESH_TOKEN,
-				Value: refreshToken,
+				Value: "invalid",
 			}
-			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
-			req.AddCookie(&cookie)
+
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify", nil)
+			req.AddCookie(cookie)
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
@@ -402,12 +392,14 @@ func TestServer(t *testing.T) {
 		})
 
 		t.Run("/api/v1/auth/verify - 401 UNAUTHORIZED - invalid cookie", func(t *testing.T) {
-			cookie := http.Cookie{
-				Name:  v1_auth.COOKIE_REFRESH_TOKEN,
-				Value: "invalid-refresh-token",
+			// create a cookie with invalid name
+			cookie := &http.Cookie{
+				Name:  "invalid",
+				Value: "invalid",
 			}
-			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
-			req.AddCookie(&cookie)
+
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify", nil)
+			req.AddCookie(cookie)
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
@@ -607,7 +599,7 @@ func TestServer(t *testing.T) {
 		}
 
 		// Create request with cookie
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/verify", nil)
 		req.AddCookie(cookie)
 		rec := httptest.NewRecorder()
 

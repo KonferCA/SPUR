@@ -2,8 +2,8 @@ package tests
 
 import (
 	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -106,7 +106,7 @@ func TestProjectEndpoints(t *testing.T) {
 
 	// Create test user and get auth token
 	ctx := context.Background()
-	userID, email, password, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject | permissions.PermViewAllProjects | permissions.PermManageTeam))
+	userID, email, password, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject|permissions.PermViewAllProjects|permissions.PermManageTeam))
 	assert.NoError(t, err)
 	t.Logf("Created test user - ID: %s, Email: %s, Password: %s", userID, email, password)
 	defer removeTestUser(ctx, email, s)
@@ -205,7 +205,7 @@ func TestProjectEndpoints(t *testing.T) {
 		 * - Endpoint returns 200 OK
 		 * - User can see their projects
 		 */
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/project", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/projects", nil)
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
@@ -262,6 +262,7 @@ func TestProjectEndpoints(t *testing.T) {
 		err = json.NewDecoder(rec.Body).Decode(&questionsResp)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, questionsResp.Questions, "Should have questions available")
+		t.Logf("Found %d questions to answer", len(questionsResp.Questions))
 
 		// Create answers for each question
 		for _, q := range questionsResp.Questions {
@@ -269,18 +270,21 @@ func TestProjectEndpoints(t *testing.T) {
 			switch q.Question {
 			case "Company website":
 				answer = "https://example.com"
+				t.Logf("Setting company website to: %s (exactly matching special case)", answer)
 			case "What is the core product or service, and what problem does it solve?":
 				answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations."
+				t.Logf("Setting core product answer length: %d", len(answer))
 			case "What is the unique value proposition?":
 				answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations."
+				t.Logf("Setting value proposition answer length: %d", len(answer))
 			default:
+				t.Logf("Skipping question: %s", q.Question)
 				continue // Skip non-required questions
 			}
 
 			// Create the answer
 			createBody := map[string]interface{}{
 				"content":     answer,
-				"project_id":  projectID,
 				"question_id": q.ID,
 			}
 			createJSON, err := json.Marshal(createBody)
@@ -298,7 +302,21 @@ func TestProjectEndpoints(t *testing.T) {
 
 			if !assert.Equal(t, http.StatusOK, createRec.Code) {
 				t.Logf("Create answer response: %s", createRec.Body.String())
+			} else {
+				t.Logf("Successfully created answer for question: %s with response: %s", q.Question, createRec.Body.String())
 			}
+		}
+
+		// Get answers before submitting to verify they're saved correctly
+		answersReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/project/%s/answers", projectID), nil)
+		answersReq.Header.Set("Authorization", "Bearer "+accessToken)
+		answersRec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(answersRec, answersReq)
+
+		if !assert.Equal(t, http.StatusOK, answersRec.Code) {
+			t.Logf("Get answers response: %s", answersRec.Body.String())
+		} else {
+			t.Logf("Current project answers: %s", answersRec.Body.String())
 		}
 
 		// Now submit the project

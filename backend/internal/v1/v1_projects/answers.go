@@ -143,7 +143,10 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	}
 
 	// Update the answer
-	_, err = h.server.GetQueries().UpdateProjectAnswer(c.Request().Context(), db.UpdateProjectAnswerParams{
+	logger := middleware.GetLogger(c)
+	logger.Info(fmt.Sprintf("Updating answer ID %s with content: '%s'", req.AnswerID, req.Content))
+
+	result, err := h.server.GetQueries().UpdateProjectAnswer(c.Request().Context(), db.UpdateProjectAnswerParams{
 		Answer:    req.Content,
 		ID:        req.AnswerID,
 		ProjectID: projectID,
@@ -154,6 +157,9 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 		}
 		return v1_common.Fail(c, 500, "Failed to update answer", err)
 	}
+
+	logger.Info(fmt.Sprintf("Update result: Answer ID=%s, Content='%s', Updated=%d",
+		result.ID, result.Answer, result.UpdatedAt))
 
 	return c.JSON(200, map[string]string{
 		"message": "Answer updated successfully",
