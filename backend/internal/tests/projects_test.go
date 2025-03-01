@@ -275,7 +275,6 @@ func TestProjectEndpoints(t *testing.T) {
 	s.GetEcho().ServeHTTP(rec, req)
 
 	if !assert.Equal(t, http.StatusOK, rec.Code, "Login should succeed") {
-		t.Logf("Login response body: %s", rec.Body.String())
 		t.FailNow()
 	}
 
@@ -551,7 +550,6 @@ func TestProjectEndpoints(t *testing.T) {
 		s.GetEcho().ServeHTTP(rec, req)
 
 		if !assert.Equal(t, http.StatusCreated, rec.Code) {
-			t.Logf("Create comment response: %s", rec.Body.String())
 			t.FailNow()
 		}
 

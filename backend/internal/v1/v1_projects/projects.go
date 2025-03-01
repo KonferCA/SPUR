@@ -486,54 +486,6 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	})
 }
 
-func (h *Handler) handleCreateAnswer(c echo.Context) error {
-	var req CreateAnswerRequest
-
-	if err := v1_common.BindandValidate(c, &req); err != nil {
-		if strings.Contains(err.Error(), "required") {
-			return v1_common.Fail(c, http.StatusBadRequest, "Question ID is required", err)
-		}
-		return v1_common.Fail(c, http.StatusNotFound, "Question not found", err)
-	}
-
-	// Get project ID from URL
-	projectID := c.Param("id")
-	if projectID == "" {
-		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
-	}
-
-	// Verify question exists and validate answer
-	question, err := h.server.GetQueries().GetProjectQuestion(c.Request().Context(), req.QuestionID)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusNotFound, "Question not found", err)
-	}
-
-	if question.Validations != nil {
-		if !isValidAnswer(req.Content, question.Validations) {
-			return c.JSON(http.StatusBadRequest, map[string]interface{}{
-				"validation_errors": []ValidationError{
-					{
-						Question: question.Question,
-						Message:  getValidationMessage(question.Validations),
-					},
-				},
-			})
-		}
-	}
-
-	// Create the answer
-	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
-		ProjectID:  projectID,
-		QuestionID: req.QuestionID,
-		Answer:     req.Content,
-	})
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)
-	}
-
-	return c.JSON(http.StatusOK, answer)
-}
-
 func (h *Handler) handleUpdateProjectStatus(c echo.Context) error {
 	projectID := c.Param("id")
 	if _, err := uuid.Parse(projectID); err != nil {
