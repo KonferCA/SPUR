@@ -75,7 +75,7 @@ var validationTypes = map[string]validationType{
 			}
 			return len(answer) >= minLen
 		},
-		Message: "Must be at least %s characters long",
+		Message: "Must be at least %s characters long to provide sufficient detail",
 	},
 	"max": {
 		Validate: func(answer string, param string) bool {

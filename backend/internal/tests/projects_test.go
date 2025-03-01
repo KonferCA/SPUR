@@ -25,6 +25,11 @@ const (
 	testCompanyWebsite       = "https://example-company.com"
 	testValuePropositionText = "Our product provides a unique solution that addresses critical needs in the market. It offers unprecedented performance, reliability, and cost-effectiveness compared to existing alternatives. The proprietary technology enables seamless integration with existing systems."
 	testCoreProductText      = "Our core service is a comprehensive platform that solves multiple pain points for enterprise customers. The solution integrates with existing workflows while providing enhanced security, analytics, and collaboration features. It significantly reduces operational overhead and improves productivity across organizations."
+
+	// error case test constants
+	testInvalidProjectID = "invalid-id"
+	testShortAnswer      = "too short"
+	testInvalidURL       = "not-a-url"
 )
 
 func seedTestProjectQuestions(pool *pgxpool.Pool) (ids []string, err error) {
@@ -115,13 +120,11 @@ func TestProjectEndpoints(t *testing.T) {
 	ctx := context.Background()
 	userID, email, password, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject|permissions.PermViewAllProjects|permissions.PermManageTeam))
 	assert.NoError(t, err)
-	t.Logf("Created test user - ID: %s, Email: %s, Password: %s", userID, email, password)
 	defer removeTestUser(ctx, email, s)
 
 	// Verify the user exists and check their status
 	user, err := s.GetQueries().GetUserByEmail(ctx, email)
 	assert.NoError(t, err, "Should find user in database")
-	t.Logf("User from DB - ID: %s, Email: %s, EmailVerified: %v", user.ID, user.Email, user.EmailVerified)
 
 	// Directly verify email in database
 	err = s.GetQueries().UpdateUserEmailVerifiedStatus(ctx, db.UpdateUserEmailVerifiedStatusParams{
@@ -134,14 +137,12 @@ func TestProjectEndpoints(t *testing.T) {
 	user, err = s.GetQueries().GetUserByEmail(ctx, email)
 	assert.NoError(t, err)
 	assert.True(t, user.EmailVerified, "User's email should be verified")
-	t.Logf("User after verification - ID: %s, Email: %s, EmailVerified: %v", user.ID, user.Email, user.EmailVerified)
 
 	// Wait a moment to ensure DB updates are complete
 	time.Sleep(100 * time.Millisecond)
 
 	// Login
 	loginBody := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
-	t.Logf("Attempting login with body: %s", loginBody)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -227,7 +228,6 @@ func TestProjectEndpoints(t *testing.T) {
 		 * - Project details are accessible
 		 */
 		path := fmt.Sprintf("/api/v1/project/%s", projectID)
-		t.Logf("Getting project at path: %s", path)
 
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		req.Header.Set("Authorization", "Bearer "+accessToken)
@@ -269,7 +269,6 @@ func TestProjectEndpoints(t *testing.T) {
 		err = json.NewDecoder(rec.Body).Decode(&questionsResp)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, questionsResp.Questions, "Should have questions available")
-		t.Logf("Found %d questions to answer", len(questionsResp.Questions))
 
 		// Create answers for each question
 		for _, q := range questionsResp.Questions {
@@ -277,15 +276,11 @@ func TestProjectEndpoints(t *testing.T) {
 			switch q.Question {
 			case "Company website":
 				answer = testCompanyWebsite
-				t.Logf("Setting company website to: %s", answer)
 			case "What is the core product or service, and what problem does it solve?":
 				answer = testCoreProductText
-				t.Logf("Setting core product answer length: %d", len(answer))
 			case "What is the unique value proposition?":
 				answer = testValuePropositionText
-				t.Logf("Setting value proposition answer length: %d", len(answer))
 			default:
-				t.Logf("Skipping question: %s", q.Question)
 				continue // Skip non-required questions
 			}
 
@@ -309,21 +304,7 @@ func TestProjectEndpoints(t *testing.T) {
 
 			if !assert.Equal(t, http.StatusOK, createRec.Code) {
 				t.Logf("Create answer response: %s", createRec.Body.String())
-			} else {
-				t.Logf("Successfully created answer for question: %s with response: %s", q.Question, createRec.Body.String())
 			}
-		}
-
-		// Get answers before submitting to verify they're saved correctly
-		answersReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/project/%s/answers", projectID), nil)
-		answersReq.Header.Set("Authorization", "Bearer "+accessToken)
-		answersRec := httptest.NewRecorder()
-		s.GetEcho().ServeHTTP(answersRec, answersReq)
-
-		if !assert.Equal(t, http.StatusOK, answersRec.Code) {
-			t.Logf("Get answers response: %s", answersRec.Body.String())
-		} else {
-			t.Logf("Current project answers: %s", answersRec.Body.String())
 		}
 
 		// Now submit the project
@@ -332,8 +313,6 @@ func TestProjectEndpoints(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec = httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
-
-		t.Logf("Submit response: %s", rec.Body.String())
 
 		if !assert.Equal(t, http.StatusOK, rec.Code) {
 			t.Logf("Submit project response: %s", rec.Body.String())
@@ -405,7 +384,7 @@ func TestProjectEndpoints(t *testing.T) {
 			{
 				name:   "Get Invalid Project",
 				method: http.MethodGet,
-				path:   "/api/v1/project/invalid-id",
+				path:   fmt.Sprintf("/api/v1/project/%s", testInvalidProjectID),
 				setupAuth: func(req *http.Request) {
 					req.Header.Set("Authorization", "Bearer "+accessToken)
 				},
@@ -426,7 +405,7 @@ func TestProjectEndpoints(t *testing.T) {
 				name:   "Invalid Answer Length",
 				method: http.MethodPatch,
 				path:   fmt.Sprintf("/api/v1/project/%s/answers", projectID),
-				body:   fmt.Sprintf(`{"content": "too short", "answer_id": "%s"}`, coreQuestionAnswerID),
+				body:   fmt.Sprintf(`{"content": "%s", "answer_id": "%s"}`, testShortAnswer, coreQuestionAnswerID),
 				setupAuth: func(req *http.Request) {
 					req.Header.Set("Authorization", "Bearer "+accessToken)
 				},
@@ -437,7 +416,7 @@ func TestProjectEndpoints(t *testing.T) {
 				name:   "Invalid URL Format",
 				method: http.MethodPatch,
 				path:   fmt.Sprintf("/api/v1/project/%s/answers", projectID),
-				body:   fmt.Sprintf(`{"content": "not-a-url", "answer_id": "%s"}`, websiteQuestionAnswerID),
+				body:   fmt.Sprintf(`{"content": "%s", "answer_id": "%s"}`, testInvalidURL, websiteQuestionAnswerID),
 				setupAuth: func(req *http.Request) {
 					req.Header.Set("Authorization", "Bearer "+accessToken)
 				},
@@ -459,7 +438,7 @@ func TestProjectEndpoints(t *testing.T) {
 				name:   "Create Answer For Invalid Question",
 				method: http.MethodPost,
 				path:   fmt.Sprintf("/api/v1/project/%s/answers", projectID),
-				body:   `{"content": "some answer", "question_id": "invalid-id"}`,
+				body:   fmt.Sprintf(`{"content": "some answer", "question_id": "%s"}`, testInvalidProjectID),
 				setupAuth: func(req *http.Request) {
 					req.Header.Set("Authorization", "Bearer "+accessToken)
 				},

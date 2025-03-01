@@ -433,17 +433,6 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 				}
 				// Validate answer against rules if validations exist
 				if question.Validations != nil {
-					// Special case for "What is the unique value proposition?" to provide more helpful error
-					if question.Question == "What is the unique value proposition?" {
-						if len(answer) < 50 {
-							validationErrors = append(validationErrors, ValidationError{
-								Question: question.Question,
-								Message:  "Your value proposition must be at least 50 characters long to provide sufficient detail",
-							})
-							continue // Skip general validation
-						}
-					}
-
 					if !isValidAnswer(answer, question.Validations) {
 						validationErrors = append(validationErrors, ValidationError{
 							Question: question.Question,
