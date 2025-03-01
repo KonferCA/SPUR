@@ -10,6 +10,7 @@ import {
 import { RxLink2, RxCross2 } from 'react-icons/rx';
 import { FC, useMemo } from 'react';
 import { SocialLink } from '@/types';
+import { formatSocialDisplay } from '@/utils/social-links'; 
 
 export interface SocialCardProps {
     data: SocialLink;
@@ -40,60 +41,9 @@ export const SocialCard: FC<SocialCardProps> = ({
         return ['', ''];
     }, [platform]);
 
+    // use the centralized utility function to format display text
     const displayText = useMemo(() => {
-        let handle = '';
-        
-        // If it's already a handle (no URL), just show it as is
-        if (!urlOrHandle.startsWith('http')) {
-            return urlOrHandle;
-        }
-        
-        try {
-            const url = new URL(urlOrHandle);
-            
-            switch (platform) {
-                case SocialPlatform.X:
-                    // Extract username from Twitter URL
-                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
-                    return '@' + handle;
-                    
-                case SocialPlatform.BlueSky:
-                    // Extract username from BlueSky URL
-                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
-                    return '@' + handle;
-                    
-                case SocialPlatform.Facebook:
-                    // Extract username from Facebook URL
-                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
-                    return '@' + handle;
-                    
-                case SocialPlatform.Instagram:
-                    // Extract username from Instagram URL
-                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
-                    return '@' + handle;
-                    
-                case SocialPlatform.LinkedIn:
-                    // Extract username from LinkedIn URL
-                    handle = url.pathname.split('/').pop() || '';
-                    return handle;
-                    
-                case SocialPlatform.Discord:
-                    // Extract username from Discord URL
-                    handle = url.pathname.split('/').filter(Boolean).pop() || '';
-                    return '@' + handle;
-                    
-                case SocialPlatform.CustomUrl:
-                    // Just show the domain for websites
-                    let domain = url.hostname.replace(/^www\./, '');
-                    return domain;
-                    
-                default:
-                    return urlOrHandle;
-            }
-        } catch (e) {
-            // If parsing fails, just return the original
-            return urlOrHandle;
-        }
+        return formatSocialDisplay(platform, urlOrHandle);
     }, [urlOrHandle, platform]);
 
     const Icon =

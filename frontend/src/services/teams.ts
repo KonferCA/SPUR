@@ -3,6 +3,7 @@ import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
 import { randomId } from '@/utils/random';
 import { ApiError } from './errors';
+import { processSocialLinksFromApi, processSocialLinksForApi } from '@/utils/social-links';
 
 export interface TeamMemberData {
     companyId: string;
@@ -41,13 +42,8 @@ interface TeamMemberResponse {
 export async function addTeamMember(accessToken: string, data: TeamMemberData) {
     const url = getApiUrl(`/companies/${data.companyId}/team`);
 
-    // Format social links for the API
-    const socialLinks = Array.isArray(data.member.socialLinks) 
-        ? data.member.socialLinks.map(link => ({
-            platform: link.platform,
-            url_or_handle: link.urlOrHandle
-          }))
-        : [];
+    // Format social links for the API using our shared utility
+    const socialLinks = processSocialLinksForApi(data.member.socialLinks);
 
     const res = await fetch(url, {
         method: 'POST',
@@ -110,54 +106,49 @@ export async function deleteTeamMember(
 export async function getTeamMembers(
     accessToken: string,
     companyId: string
-): Promise<TeamMember[]> {
+): Promise<TeamMembersResponse> {
     const url = getApiUrl(`/companies/${companyId}/team`);
     const res = await fetch(url, {
-        method: 'GET',
         headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
         },
     });
 
+    const json = await res.json();
     if (res.status !== HttpStatusCode.OK) {
-        throw new Error('Failed to fetch team members');
+        throw new ApiError(
+            'Failed to get team members',
+            res.status,
+            json.message
+        );
     }
 
-    const json = await res.json();
-    
-    const teamMembers = json.team_members || [] as TeamMemberResponse[];
-    return teamMembers.map((member: TeamMemberResponse) => {
-
-        // Transform social_links to match the expected SocialLink format with proper id field
-        const socialLinks = (member.social_links || []).map(link => ({
-            id: randomId(),
-            platform: link.platform,
-            urlOrHandle: link.url_or_handle
-        }));
-
-        const mappedMember = {
+    // Transform the response
+    const teamMembers = (json.team_members || []).map((member: TeamMemberResponse) => {
+        return {
             id: member.id,
+            companyId: member.company_id,
             firstName: member.first_name,
             lastName: member.last_name,
             title: member.title,
-            detailedBiography: member.detailed_biography || '',
-            socialLinks: socialLinks,
-            resumeExternalUrl: member.resume_external_url || '',
-            resumeInternalUrl: member.resume_internal_url || '',
+            detailedBiography: member.detailed_biography,
+            isAccountOwner: member.is_account_owner,
             commitmentType: member.commitment_type || '',
             introduction: member.introduction || '',
             industryExperience: member.industry_experience || '',
             previousWork: member.previous_work || '',
+            resumeExternalUrl: member.resume_external_url || '',
+            resumeInternalUrl: member.resume_internal_url || '',
             founderAgreementExternalUrl: member.founders_agreement_external_url || '',
             founderAgreementInternalUrl: member.founders_agreement_internal_url || '',
-            isAccountOwner: member.is_account_owner,
-            created_at: parseInt(member.created_at) || 0,
-            updated_at: parseInt(member.updated_at) || 0,
+            // Process social links using our shared utility
+            socialLinks: processSocialLinksFromApi(member.social_links),
+            createdAt: member.created_at,
+            updatedAt: member.updated_at,
         };
+    });
 
-        return mappedMember;
-    }) as TeamMember[];
+    return { teamMembers };
 }
 
 export interface UploadTeamMemberDocumentData {
@@ -202,45 +193,42 @@ export async function uploadTeamMemberDocument(
     return snakeToCamel(json) as UploadTeamMemberDocumentResponse;
 }
 
-export async function updateTeamMember(accessToken: string, data: TeamMemberData) {
-    const url = getApiUrl(`/companies/${data.companyId}/team/${data.member.id}`);
+export async function updateTeamMember(
+    accessToken: string,
+    companyId: string,
+    memberId: string,
+    data: Partial<TeamMember>
+) {
+    const url = getApiUrl(`/companies/${companyId}/team/${memberId}`);
 
-    console.log('Sending team member update with social links:', data.member.socialLinks);
-    
-    let socialLinksValue;
-    if (Array.isArray(data.member.socialLinks) && data.member.socialLinks.length === 0) {
-        socialLinksValue = null;
-        console.log('Sending null for social_links to force backend to clear all links');
-    } else {
-        socialLinksValue = Array.isArray(data.member.socialLinks) 
-            ? data.member.socialLinks.map(link => ({
-                platform: link.platform,
-                url_or_handle: link.urlOrHandle
-              }))
-            : [];
-    }
-        
-    const requestBody = {
-        first_name: data.member.firstName,
-        last_name: data.member.lastName,
-        title: data.member.title,
-        detailed_biography: data.member.detailedBiography,
-        social_links: socialLinksValue,
-        commitment_type: data.member.commitmentType,
-        introduction: data.member.introduction,
-        industry_experience: data.member.industryExperience,
-        previous_work: data.member.previousWork,
-    };
-    
-    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    // Format social links using our shared utility
+    const socialLinks = data.socialLinks 
+        ? processSocialLinksForApi(data.socialLinks)
+        : undefined;
+
+    const body: Record<string, any> = {};
+    if (data.firstName !== undefined) body.first_name = data.firstName;
+    if (data.lastName !== undefined) body.last_name = data.lastName;
+    if (data.title !== undefined) body.title = data.title;
+    if (data.detailedBiography !== undefined) body.detailed_biography = data.detailedBiography;
+    if (data.isAccountOwner !== undefined) body.is_account_owner = data.isAccountOwner;
+    if (data.commitmentType !== undefined) body.commitment_type = data.commitmentType;
+    if (data.introduction !== undefined) body.introduction = data.introduction;
+    if (data.industryExperience !== undefined) body.industry_experience = data.industryExperience;
+    if (data.previousWork !== undefined) body.previous_work = data.previousWork;
+    if (data.resumeExternalUrl !== undefined) body.resume_external_url = data.resumeExternalUrl;
+    if (data.resumeInternalUrl !== undefined) body.resume_internal_url = data.resumeInternalUrl;
+    if (data.founderAgreementExternalUrl !== undefined) body.founders_agreement_external_url = data.founderAgreementExternalUrl;
+    if (data.founderAgreementInternalUrl !== undefined) body.founders_agreement_internal_url = data.founderAgreementInternalUrl;
+    if (socialLinks !== undefined) body.social_links = socialLinks;
 
     const res = await fetch(url, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(body),
     });
 
     const json = await res.json();
@@ -248,11 +236,9 @@ export async function updateTeamMember(accessToken: string, data: TeamMemberData
         throw new ApiError(
             'Failed to update team member',
             res.status,
-            json
+            json.message
         );
     }
 
-    // Convert snake_case response to camelCase
-    const camelCaseResponse = snakeToCamel(json);
-    return camelCaseResponse;
+    return json;
 }

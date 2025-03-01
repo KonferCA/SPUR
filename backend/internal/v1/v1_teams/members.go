@@ -4,10 +4,11 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
-	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 )
 
 /*
@@ -16,6 +17,56 @@ import (
  */
 func formatTime(t int64) string {
 	return time.Unix(t, 0).Format(time.RFC3339)
+}
+
+// helper function to convert db.TeamMember to TeamMemberResponse
+func buildTeamMemberResponse(member db.TeamMember) TeamMemberResponse {
+	// process social links
+	socialLinks := v1_common.ProcessSocialLinks(member)
+
+	// safely handle optional fields
+	previousWorkStr := ""
+	if member.PreviousWork != nil {
+		previousWorkStr = *member.PreviousWork
+	}
+	resumeExternalUrlStr := ""
+	if member.ResumeExternalUrl != nil {
+		resumeExternalUrlStr = *member.ResumeExternalUrl
+	}
+	resumeInternalUrlStr := ""
+	if member.ResumeInternalUrl != nil {
+		resumeInternalUrlStr = *member.ResumeInternalUrl
+	}
+	foundersAgreementExternalUrlStr := ""
+	if member.FoundersAgreementExternalUrl != nil {
+		foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
+	}
+	foundersAgreementInternalUrlStr := ""
+	if member.FoundersAgreementInternalUrl != nil {
+		foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
+	}
+
+	// build response object
+	return TeamMemberResponse{
+		ID:                           member.ID,
+		CompanyID:                    member.CompanyID,
+		FirstName:                    member.FirstName,
+		LastName:                     member.LastName,
+		Title:                        member.Title,
+		SocialLinks:                  socialLinks,
+		IsAccountOwner:               member.IsAccountOwner,
+		CommitmentType:               member.CommitmentType,
+		Introduction:                 member.Introduction,
+		IndustryExperience:           member.IndustryExperience,
+		DetailedBiography:            member.DetailedBiography,
+		PreviousWork:                 previousWorkStr,
+		ResumeExternalUrl:            resumeExternalUrlStr,
+		ResumeInternalUrl:            resumeInternalUrlStr,
+		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
+		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
+		CreatedAt:                    formatTime(member.CreatedAt),
+		UpdatedAt:                    formatTime(member.UpdatedAt),
+	}
 }
 
 /*
@@ -73,51 +124,9 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create team member", err)
 	}
 
-	// Process social links
-	socialLinks := v1_common.ProcessSocialLinks(member)
-
-	previousWorkStr := ""
-	if member.PreviousWork != nil {
-		previousWorkStr = *member.PreviousWork
-	}
-	resumeExternalUrlStr := ""
-	if member.ResumeExternalUrl != nil {
-		resumeExternalUrlStr = *member.ResumeExternalUrl
-	}
-	resumeInternalUrlStr := ""
-	if member.ResumeInternalUrl != nil {
-		resumeInternalUrlStr = *member.ResumeInternalUrl
-	}
-	foundersAgreementExternalUrlStr := ""
-	if member.FoundersAgreementExternalUrl != nil {
-		foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
-	}
-	foundersAgreementInternalUrlStr := ""
-	if member.FoundersAgreementInternalUrl != nil {
-		foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
-	}
-
-	// Return success response with member data
-	return c.JSON(http.StatusCreated, TeamMemberResponse{
-		ID:                           member.ID,
-		CompanyID:                    member.CompanyID,
-		FirstName:                    member.FirstName,
-		LastName:                     member.LastName,
-		Title:                        member.Title,
-		SocialLinks:                  socialLinks,
-		IsAccountOwner:               member.IsAccountOwner,
-		CommitmentType:               member.CommitmentType,
-		Introduction:                 member.Introduction,
-		IndustryExperience:           member.IndustryExperience,
-		DetailedBiography:            member.DetailedBiography,
-		PreviousWork:                 previousWorkStr,
-		ResumeExternalUrl:            resumeExternalUrlStr,
-		ResumeInternalUrl:            resumeInternalUrlStr,
-		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
-		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
-		CreatedAt:                    formatTime(member.CreatedAt),
-		UpdatedAt:                    formatTime(member.UpdatedAt),
-	})
+	// Use helper function to build response
+	response := buildTeamMemberResponse(member)
+	return c.JSON(http.StatusCreated, response)
 }
 
 /*
@@ -144,53 +153,10 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to retrieve team members", err)
 	}
 
-	// Convert to response type
+	// Convert to response type using helper function
 	var teamMembers []TeamMemberResponse
 	for _, member := range members {
-		// Process social links
-		socialLinks := v1_common.ProcessSocialLinks(member)
-
-		previousWorkStr := ""
-		if member.PreviousWork != nil {
-			previousWorkStr = *member.PreviousWork
-		}
-		resumeExternalUrlStr := ""
-		if member.ResumeExternalUrl != nil {
-			resumeExternalUrlStr = *member.ResumeExternalUrl
-		}
-		resumeInternalUrlStr := ""
-		if member.ResumeInternalUrl != nil {
-			resumeInternalUrlStr = *member.ResumeInternalUrl
-		}
-		foundersAgreementExternalUrlStr := ""
-		if member.FoundersAgreementExternalUrl != nil {
-			foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
-		}
-		foundersAgreementInternalUrlStr := ""
-		if member.FoundersAgreementInternalUrl != nil {
-			foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
-		}
-
-		teamMembers = append(teamMembers, TeamMemberResponse{
-			ID:                           member.ID,
-			CompanyID:                    member.CompanyID,
-			FirstName:                    member.FirstName,
-			LastName:                     member.LastName,
-			Title:                        member.Title,
-			SocialLinks:                  socialLinks,
-			IsAccountOwner:               member.IsAccountOwner,
-			CommitmentType:               member.CommitmentType,
-			Introduction:                 member.Introduction,
-			IndustryExperience:           member.IndustryExperience,
-			DetailedBiography:            member.DetailedBiography,
-			PreviousWork:                 previousWorkStr,
-			ResumeExternalUrl:            resumeExternalUrlStr,
-			ResumeInternalUrl:            resumeInternalUrlStr,
-			FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
-			FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
-			CreatedAt:                    formatTime(member.CreatedAt),
-			UpdatedAt:                    formatTime(member.UpdatedAt),
-		})
+		teamMembers = append(teamMembers, buildTeamMemberResponse(member))
 	}
 
 	return c.JSON(http.StatusOK, TeamMembersResponse{TeamMembers: teamMembers})
@@ -231,50 +197,8 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to retrieve team member", err)
 	}
 
-	// Process social links
-	socialLinks := v1_common.ProcessSocialLinks(member)
-
-	previousWorkStr := ""
-	if member.PreviousWork != nil {
-		previousWorkStr = *member.PreviousWork
-	}
-	resumeExternalUrlStr := ""
-	if member.ResumeExternalUrl != nil {
-		resumeExternalUrlStr = *member.ResumeExternalUrl
-	}
-	resumeInternalUrlStr := ""
-	if member.ResumeInternalUrl != nil {
-		resumeInternalUrlStr = *member.ResumeInternalUrl
-	}
-	foundersAgreementExternalUrlStr := ""
-	if member.FoundersAgreementExternalUrl != nil {
-		foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
-	}
-	foundersAgreementInternalUrlStr := ""
-	if member.FoundersAgreementInternalUrl != nil {
-		foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
-	}
-
-	response := TeamMemberResponse{
-		ID:                           member.ID,
-		CompanyID:                    member.CompanyID,
-		FirstName:                    member.FirstName,
-		LastName:                     member.LastName,
-		Title:                        member.Title,
-		SocialLinks:                  socialLinks,
-		IsAccountOwner:               member.IsAccountOwner,
-		CommitmentType:               member.CommitmentType,
-		Introduction:                 member.Introduction,
-		IndustryExperience:           member.IndustryExperience,
-		DetailedBiography:            member.DetailedBiography,
-		PreviousWork:                 previousWorkStr,
-		ResumeExternalUrl:            resumeExternalUrlStr,
-		ResumeInternalUrl:            resumeInternalUrlStr,
-		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
-		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
-		CreatedAt:                    formatTime(member.CreatedAt),
-		UpdatedAt:                    formatTime(member.UpdatedAt),
-	}
+	// Use helper function to build response
+	response := buildTeamMemberResponse(member)
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -315,54 +239,54 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 
 	// Update team member in database
 	queries := db.New(h.server.GetDB())
-	
+
 	// Convert pointer strings to regular strings for the update params
 	personalWebsiteStr := ""
 	if req.PersonalWebsite != nil {
 		personalWebsiteStr = *req.PersonalWebsite
 	}
-	
+
 	previousWorkStr := ""
 	if req.PreviousWork != nil {
 		previousWorkStr = *req.PreviousWork
 	}
-	
+
 	resumeExternalUrlStr := ""
 	if req.ResumeExternalUrl != nil {
 		resumeExternalUrlStr = *req.ResumeExternalUrl
 	}
-	
+
 	resumeInternalUrlStr := ""
 	if req.ResumeInternalUrl != nil {
 		resumeInternalUrlStr = *req.ResumeInternalUrl
 	}
-	
+
 	foundersAgreementExternalUrlStr := ""
 	if req.FoundersAgreementExternalUrl != nil {
 		foundersAgreementExternalUrlStr = *req.FoundersAgreementExternalUrl
 	}
-	
+
 	foundersAgreementInternalUrlStr := ""
 	if req.FoundersAgreementInternalUrl != nil {
 		foundersAgreementInternalUrlStr = *req.FoundersAgreementInternalUrl
 	}
-	
+
 	member, err := queries.UpdateTeamMember(c.Request().Context(), db.UpdateTeamMemberParams{
-		ID:          memberID,
-		CompanyID:   companyID,
-		FirstName:   req.FirstName,
-		LastName:    req.LastName,
-		Title:       req.Title,
-		DetailedBiography: req.DetailedBiography,
-		LinkedinUrl: req.LinkedinUrl,
-		SocialLinks: socialLinksJSON,
-		PersonalWebsite: personalWebsiteStr,
-		CommitmentType: req.CommitmentType,
-		Introduction: req.Introduction,
-		IndustryExperience: req.IndustryExperience,
-		PreviousWork: previousWorkStr,
-		ResumeExternalUrl: resumeExternalUrlStr,
-		ResumeInternalUrl: resumeInternalUrlStr,
+		ID:                           memberID,
+		CompanyID:                    companyID,
+		FirstName:                    req.FirstName,
+		LastName:                     req.LastName,
+		Title:                        req.Title,
+		DetailedBiography:            req.DetailedBiography,
+		LinkedinUrl:                  req.LinkedinUrl,
+		SocialLinks:                  socialLinksJSON,
+		PersonalWebsite:              personalWebsiteStr,
+		CommitmentType:               req.CommitmentType,
+		Introduction:                 req.Introduction,
+		IndustryExperience:           req.IndustryExperience,
+		PreviousWork:                 previousWorkStr,
+		ResumeExternalUrl:            resumeExternalUrlStr,
+		ResumeInternalUrl:            resumeInternalUrlStr,
 		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
 		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
 	})
@@ -373,50 +297,8 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update team member", err)
 	}
 
-	// Process social links
-	socialLinks := v1_common.ProcessSocialLinks(member)
-
-	previousWorkStr = ""
-	if member.PreviousWork != nil {
-		previousWorkStr = *member.PreviousWork
-	}
-	resumeExternalUrlStr = ""
-	if member.ResumeExternalUrl != nil {
-		resumeExternalUrlStr = *member.ResumeExternalUrl
-	}
-	resumeInternalUrlStr = ""
-	if member.ResumeInternalUrl != nil {
-		resumeInternalUrlStr = *member.ResumeInternalUrl
-	}
-	foundersAgreementExternalUrlStr = ""
-	if member.FoundersAgreementExternalUrl != nil {
-		foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
-	}
-	foundersAgreementInternalUrlStr = ""
-	if member.FoundersAgreementInternalUrl != nil {
-		foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
-	}
-
-	response := TeamMemberResponse{
-		ID:                           member.ID,
-		CompanyID:                    member.CompanyID,
-		FirstName:                    member.FirstName,
-		LastName:                     member.LastName,
-		Title:                        member.Title,
-		SocialLinks:                  socialLinks,
-		IsAccountOwner:               member.IsAccountOwner,
-		CommitmentType:               member.CommitmentType,
-		Introduction:                 member.Introduction,
-		IndustryExperience:           member.IndustryExperience,
-		DetailedBiography:            member.DetailedBiography,
-		PreviousWork:                 previousWorkStr,
-		ResumeExternalUrl:            resumeExternalUrlStr,
-		ResumeInternalUrl:            resumeInternalUrlStr,
-		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
-		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
-		CreatedAt:                    formatTime(member.CreatedAt),
-		UpdatedAt:                    formatTime(member.UpdatedAt),
-	}
+	// Use helper function to build response
+	response := buildTeamMemberResponse(member)
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -441,14 +323,23 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Not authorized to access this company", err)
 	}
 
-	queries := db.New(h.server.GetDB())
+	// Check and delete in one transaction to reduce database calls
+	ctx := c.Request().Context()
+	tx, err := h.server.GetDB().Begin(ctx)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to start transaction", err)
+	}
 
-	// First check if member exists
-	_, err := queries.GetTeamMember(c.Request().Context(), db.GetTeamMemberParams{
+	// Create queries with transaction
+	qtx := db.New(tx)
+
+	// Check if member exists
+	_, err = qtx.GetTeamMember(ctx, db.GetTeamMemberParams{
 		ID:        memberID,
 		CompanyID: companyID,
 	})
 	if err != nil {
+		tx.Rollback(ctx)
 		if err.Error() == "no rows in result set" {
 			return v1_common.Fail(c, http.StatusNotFound, "Team member not found", err)
 		}
@@ -456,19 +347,27 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 	}
 
 	// Delete team member
-	err = queries.DeleteTeamMember(c.Request().Context(), db.DeleteTeamMemberParams{
+	err = qtx.DeleteTeamMember(ctx, db.DeleteTeamMemberParams{
 		ID:        memberID,
 		CompanyID: companyID,
 	})
 	if err != nil {
+		tx.Rollback(ctx)
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to delete team member", err)
+	}
+
+	// Commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to commit transaction", err)
 	}
 
 	return v1_common.Success(c, http.StatusOK, "Team member successfully deleted")
 }
 
 /*
- * Validates if the current user has access to the specified company
+ * Company access validation with caching per request to reduce db calls.
+ * Uses echo context values to cache company authorization results.
+ *
  * Access rules:
  * - Company owners have full access regardless of requireOwner value
  * - When requireOwner is true, only company owners are allowed
@@ -476,20 +375,28 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
  *   - Company owners are allowed
  *   - Users with ViewAllProjects permission are allowed read-only access
  *   - Other users are denied access
- *
- * Parameters:
- *   - c: Echo context containing the authenticated user
- *   - companyID: ID of the company to check access for
- *   - requireOwner: If true, only allows company owners. If false, allows owners and users with ViewAllProjects permission.
- *
- * Returns:
- *   - nil if access is granted
- *   - error if access is denied or validation fails
  */
 func (h *Handler) validateCompanyAccess(c echo.Context, companyID string, requireOwner bool) error {
 	user := c.Get("user").(*db.User)
 	if user == nil {
 		return v1_common.NewAuthError("User not found in context")
+	}
+
+	// Check if we have a cached access result for this company
+	cacheKey := "company_access:" + companyID
+	if val, ok := c.Get(cacheKey).(bool); ok {
+		// If we require owner, we need an explicit owner check
+		if requireOwner {
+			ownerCacheKey := "company_owner:" + companyID
+			if val, ok := c.Get(ownerCacheKey).(bool); ok {
+				if val {
+					return nil // User is owner, allow access
+				}
+				return v1_common.NewAuthError("Not authorized to access this company")
+			}
+		} else if val {
+			return nil // We have cached access permission
+		}
 	}
 
 	queries := db.New(h.server.GetDB())
@@ -505,13 +412,21 @@ func (h *Handler) validateCompanyAccess(c echo.Context, companyID string, requir
 
 	// If user is the owner, they have full access
 	if company.OwnerID == user.ID {
+		// Cache both owner status and general access
+		c.Set("company_owner:"+companyID, true)
+		c.Set("company_access:"+companyID, true)
 		return nil
 	}
 
+	// Cache non-owner status
+	c.Set("company_owner:"+companyID, false)
+
 	// For non-owners, check if they have view permissions and owner access isn't required
 	if !requireOwner && permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermViewAllProjects) {
+		c.Set("company_access:"+companyID, true)
 		return nil // Allow users with view permissions
 	}
 
+	c.Set("company_access:"+companyID, false)
 	return v1_common.NewAuthError("Not authorized to access this company")
 }

@@ -41,6 +41,39 @@ interface FormErrors {
     industry_experience?: string;
 }
 
+// helper to create a consistent form data object from initial data
+const initializeFormData = (data: Partial<TeamMemberFormData> = {}): TeamMemberFormData => {
+    // process social links to ensure all have ids
+    const socialLinks = data.socialLinks || [];
+    const processedSocialLinks = socialLinks.map(link => {
+        if (!link.id) {
+            return {
+                ...link,
+                id: Math.random().toString(36).substring(2, 9)
+            };
+        }
+        return link;
+    });
+    
+    // return consistent form data with defaults
+    return {
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        title: data.title || '',
+        detailed_biography: data.detailed_biography || '',
+        is_account_owner: data.is_account_owner || false,
+        commitment_type: data.commitment_type || 'Full-time',
+        introduction: data.introduction || '',
+        industry_experience: data.industry_experience || '',
+        previous_work: data.previous_work || '',
+        resume_external_url: data.resume_external_url || '',
+        resume_internal_url: data.resume_internal_url || '',
+        founders_agreement_external_url: data.founders_agreement_external_url || '',
+        founders_agreement_internal_url: data.founders_agreement_internal_url || '',
+        socialLinks: processedSocialLinks,
+    };
+};
+
 export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
     isOpen,
     onClose,
@@ -49,56 +82,12 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
     initialData = {},
     mode
 }) => {
-    const [formData, setFormData] = useState<TeamMemberFormData>({
-        first_name: initialData.first_name || '',
-        last_name: initialData.last_name || '',
-        title: initialData.title || '',
-        detailed_biography: initialData.detailed_biography || '',
-        is_account_owner: initialData.is_account_owner || false,
-        commitment_type: initialData.commitment_type || 'Full-time',
-        introduction: initialData.introduction || '',
-        industry_experience: initialData.industry_experience || '',
-        previous_work: initialData.previous_work || '',
-        resume_external_url: initialData.resume_external_url || '',
-        resume_internal_url: initialData.resume_internal_url || '',
-        founders_agreement_external_url: initialData.founders_agreement_external_url || '',
-        founders_agreement_internal_url: initialData.founders_agreement_internal_url || '',
-        socialLinks: [],
-    });
+    const [formData, setFormData] = useState<TeamMemberFormData>(initializeFormData(initialData));
     const [errors, setErrors] = useState<FormErrors>({});
 
     // Update form data when initialData changes
     useEffect(() => {
-        // Check if we have socialLinks in the initialData
-        const socialLinks = initialData.socialLinks || [];
-        
-        // Make sure all social links have IDs
-        const processedSocialLinks = socialLinks.map(link => {
-            if (!link.id) {
-                return {
-                    ...link,
-                    id: Math.random().toString(36).substring(2, 9)
-                };
-            }
-            return link;
-        });
-
-        setFormData({
-            first_name: initialData.first_name || '',
-            last_name: initialData.last_name || '',
-            title: initialData.title || '',
-            detailed_biography: initialData.detailed_biography || '',
-            is_account_owner: initialData.is_account_owner || false,
-            commitment_type: initialData.commitment_type || 'Full-time',
-            introduction: initialData.introduction || '',
-            industry_experience: initialData.industry_experience || '',
-            previous_work: initialData.previous_work || '',
-            resume_external_url: initialData.resume_external_url || '',
-            resume_internal_url: initialData.resume_internal_url || '',
-            founders_agreement_external_url: initialData.founders_agreement_external_url || '',
-            founders_agreement_internal_url: initialData.founders_agreement_internal_url || '',
-            socialLinks: processedSocialLinks,
-        });
+        setFormData(initializeFormData(initialData));
     }, [initialData]);
 
     const validateForm = (): boolean => {
