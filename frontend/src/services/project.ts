@@ -1,7 +1,7 @@
 import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 import { snakeToCamel } from '@/utils/object';
-import { TeamMember } from '@/types';
+import type { TeamMember } from '@/types';
 
 // interface CompanyResponse {
 //     ID: string;
@@ -131,10 +131,11 @@ export async function getProjectFormQuestions(
         );
     }
     const data = await response.json();
-    return snakeToCamel(data);
+    return snakeToCamel(data) as ProjectQuestionsData;
 }
 
 // Transform backend response to frontend format
+// biome-ignore lint/suspicious/noExplicitAny:
 const transformProject = (data: any): Project => {
     return {
         id: data.ID,
@@ -177,7 +178,7 @@ export async function createProject(
 
     const json = await response.json();
 
-    return snakeToCamel(json);
+    return snakeToCamel(json) as ProjectResponse;
 }
 
 /*
