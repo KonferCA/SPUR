@@ -20,7 +20,7 @@ export default function SplitScreenLanding() {
         )}
         onMouseEnter={() => setActiveCard("left")}
         onMouseLeave={() => setActiveCard(null)}
-        onMouseDown={() => redirect("https://capital.spuric.com")}
+        onMouseDown={() => redirect("https://capital.spur.konfer.ca")}
       >
         <Image
           src={rightImage}
@@ -47,7 +47,7 @@ export default function SplitScreenLanding() {
         )}
         onMouseEnter={() => setActiveCard("right")}
         onMouseLeave={() => setActiveCard(null)}
-        onMouseDown={() => redirect("https://innovation.spuric.com")}
+        onMouseDown={() => redirect("https://innovation.spur.konfer.ca")}
       >
         <Image
           src={leftImage}
