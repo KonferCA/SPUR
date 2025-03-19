@@ -13,7 +13,7 @@ export default function SplitScreenLanding() {
   const router = useRouter()
 
   return (
-    <main className="h-screen w-screen flex overflow-hidden">
+    <main className="h-screen w-screen flex flex-col sm:flex-row overflow-hidden text-center sm:text-left">
       <div
         className={cn(
           "relative h-full transition-all duration-500 ease-in-out flex-1 backdrop-blur-3xl",
