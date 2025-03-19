@@ -3,13 +3,14 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
-import { redirect } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import leftImage from "../public/2.png"
 import rightImage from "../public/3.png"
 
 
 export default function SplitScreenLanding() {
   const [activeCard, setActiveCard] = useState<"left" | "right" | null>(null)
+  const router = useRouter()
 
   return (
     <main className="h-screen w-screen flex overflow-hidden">
@@ -20,7 +21,7 @@ export default function SplitScreenLanding() {
         )}
         onMouseEnter={() => setActiveCard("left")}
         onMouseLeave={() => setActiveCard(null)}
-        onMouseDown={() => redirect("https://capital.spur.konfer.ca")}
+        onMouseDown={() => router.push("https://capital.spuric.com")}
       >
         <Image
           src={rightImage}
@@ -47,7 +48,8 @@ export default function SplitScreenLanding() {
         )}
         onMouseEnter={() => setActiveCard("right")}
         onMouseLeave={() => setActiveCard(null)}
-        onMouseDown={() => redirect("https://innovation.spur.konfer.ca")}
+        onMouseDown={() => alert("This website is under construction")}
+        // onMouseDown={() => router.push("https://innovation.spuric.com")}
       >
         <Image
           src={leftImage}
@@ -63,6 +65,7 @@ export default function SplitScreenLanding() {
             </span>
             <h2 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-bold max-w-md">SPUR Innovation</h2>
             <p className="mt-4 max-w-md text-white/80">For students, developers, startups, and growth companies.</p>
+            <p className="mt-4 max-w-md text-white/80 font-black">This website is coming soon.</p>
           </div>
         </div>
       </div>
