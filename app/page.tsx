@@ -65,7 +65,6 @@ export default function SplitScreenLanding() {
             </span>
             <h2 className="mt-4 text-3xl md:text-4xl lg:text-5xl font-bold max-w-md">SPUR Innovation</h2>
             <p className="mt-4 max-w-md text-white/80">For students, developers, startups, and growth companies.</p>
-            <p className="mt-4 max-w-md text-white/80 font-black">This website is coming soon.</p>
           </div>
         </div>
       </div>
