@@ -48,8 +48,7 @@ export default function SplitScreenLanding() {
         )}
         onMouseEnter={() => setActiveCard("right")}
         onMouseLeave={() => setActiveCard(null)}
-        // onMouseDown={() => alert("This website is under construction")}
-        onMouseDown={() => router.push("https://spuric.com")}
+        onMouseDown={() => router.push("https://innovation.spuric.com")}
       >
         <Image
           src={leftImage}
