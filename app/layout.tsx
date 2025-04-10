@@ -12,6 +12,11 @@ export const metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+          <link rel="apple-touch-icon" href="/spur-icon.svg" />
+          <link rel="icon" href="/spur-icon.svg" />
+      </head>
+
       <body className={inter.className}>
           {children}
       </body>
